@@ -13,8 +13,8 @@ function applyColors(editor: any, colors: Record<string, string>) {
     if (!root) return;
 
     // Apply to CharacterNodes
-    const charNodes = root.querySelectorAll<HTMLElement>(".character-node");
-    charNodes.forEach((el) => {
+    const charNodes = root.querySelectorAll(".character-node");
+    charNodes.forEach((el: any) => {
       const name = (el.getAttribute("data-character-name") || "").trim();
       const color = name && colors[name] ? colors[name] : DEFAULT_COLOR;
       el.style.borderLeft = `4px solid ${color}`;
@@ -24,8 +24,8 @@ function applyColors(editor: any, colors: Record<string, string>) {
     });
 
     // Apply to DialogueNodes
-    const dialNodes = root.querySelectorAll<HTMLElement>(".dialogue-node");
-    dialNodes.forEach((el) => {
+    const dialNodes = root.querySelectorAll(".dialogue-node");
+    dialNodes.forEach((el: any) => {
       const name = (el.getAttribute("data-character-name") || "").trim();
       const color =
         name && colors[name] ? colors[name] + "80" : DEFAULT_COLOR + "80";

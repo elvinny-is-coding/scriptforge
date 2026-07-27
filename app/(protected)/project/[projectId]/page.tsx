@@ -73,79 +73,60 @@ export default function ProjectPage() {
 
   // ---------- Image generation listener ----------
   useEffect(() => {
-    const handleGenerateImage = async (e: CustomEvent<string>) => {
-      const sceneText = e.detail;
+    const handler = (e: Event) => {
+      const event = e as CustomEvent<string>;
+      const sceneText = event.detail;
       if (!sceneText) return;
 
-      try {
-        const styleSheet = (project as any)?.style_sheet ?? {};
-        const refineRes = await fetch("/api/cloudflare/refine-prompt", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sceneText, styleSheet }),
-        });
-        if (!refineRes.ok) throw new Error("Prompt refinement failed");
-        const refinedPrompt = await refineRes.text();
+      (async () => {
+        try {
+          const styleSheet = (project as any)?.style_sheet ?? {};
+          const refineRes = await fetch("/api/cloudflare/refine-prompt", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sceneText, styleSheet }),
+          });
+          if (!refineRes.ok) throw new Error("Prompt refinement failed");
+          const refinedPrompt = await refineRes.text();
 
-        const genRes = await fetch("/api/cloudflare/generate-image", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: refinedPrompt }),
-        });
-        if (!genRes.ok) throw new Error("Image generation failed");
-        const { image } = await genRes.json();
+          const genRes = await fetch("/api/cloudflare/generate-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt: refinedPrompt }),
+          });
+          if (!genRes.ok) throw new Error("Image generation failed");
+          const { image } = await genRes.json();
 
-        await addImage(image, refinedPrompt, sceneText);
-        toast.success("Image added to moodboard");
-      } catch (err: any) {
-        toast.error(err.message || "Image generation failed");
-      }
+          await addImage(image, refinedPrompt, sceneText);
+          toast.success("Image added to moodboard");
+        } catch (err: any) {
+          toast.error(err.message || "Image generation failed");
+        }
+      })();
     };
 
-    window.addEventListener(
-      "generate-image",
-      handleGenerateImage as EventListener,
-    );
-    return () => {
-      window.removeEventListener(
-        "generate-image",
-        handleGenerateImage as EventListener,
-      );
-    };
+    window.addEventListener("generate-image", handler);
+    return () => window.removeEventListener("generate-image", handler);
   }, [project, addImage]);
 
   // ---------- Selection tracking listener ----------
   useEffect(() => {
-    const handleSelection = (e: CustomEvent<string>) => {
-      setSelectedText(e.detail);
+    const handler = (e: Event) => {
+      setSelectedText((e as CustomEvent<string>).detail);
     };
 
-    window.addEventListener(
-      "selection-change",
-      handleSelection as EventListener,
-    );
-    return () => {
-      window.removeEventListener(
-        "selection-change",
-        handleSelection as EventListener,
-      );
-    };
+    window.addEventListener("selection-change", handler);
+    return () => window.removeEventListener("selection-change", handler);
   }, []);
 
   // ---------- Live characters listener ----------
   useEffect(() => {
-    const handleCharacters = (e: CustomEvent<string[]>) => {
-      setCharacters(e.detail);
+    const handler = (e: Event) => {
+      setCharacters((e as CustomEvent<string[]>).detail);
     };
-    window.addEventListener(
-      "live-characters",
-      handleCharacters as EventListener,
-    );
-    return () =>
-      window.removeEventListener(
-        "live-characters",
-        handleCharacters as EventListener,
-      );
+
+    window.addEventListener("live-characters", handler);
+    return () => window.removeEventListener("live-characters", handler);
   }, []);
 
   // Set initial scene when scenes load

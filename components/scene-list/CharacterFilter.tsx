@@ -25,7 +25,7 @@ export function CharacterFilter({
       <label className="text-xs text-muted-foreground font-medium">
         Filter by character
       </label>
-      <Select onValueChange={onChange} value={value}>
+      <Select onValueChange={(val) => onChange(val ?? "all")} value={value}>
         <SelectTrigger className="w-full h-8 text-xs">
           <SelectValue placeholder="All characters" />
         </SelectTrigger>

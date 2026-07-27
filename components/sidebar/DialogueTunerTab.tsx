@@ -92,7 +92,12 @@ export function DialogueTunerTab({
         <label className="text-xs font-semibold text-muted-foreground">
           Select Character
         </label>
-        <Select onValueChange={(val) => setSelectedCharacter(val)}>
+        <Select
+          onValueChange={(val) => {
+            // TypeScript workaround: val is string | null; pass directly to state
+            setSelectedCharacter(val as string | null);
+          }}
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Choose a character..." />
           </SelectTrigger>

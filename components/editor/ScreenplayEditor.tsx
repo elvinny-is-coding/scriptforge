@@ -41,6 +41,7 @@ interface ScreenplayEditorProps {
   initialContent: object;
   onSave: (content: object) => Promise<void> | void;
   editable?: boolean;
+  focusMode?: boolean; // restored
 }
 
 function AutoSaveWrapper({ onSave }: { onSave: (content: object) => void }) {
@@ -133,6 +134,7 @@ export function ScreenplayEditor({
   initialContent,
   onSave,
   editable = true,
+  focusMode = false,
 }: ScreenplayEditorProps) {
   const isContentValid =
     initialContent &&
@@ -149,7 +151,7 @@ export function ScreenplayEditor({
   return (
     <LexicalComposer initialConfig={configWithState}>
       <div className="flex flex-col h-full">
-        {editable && <ScreenplayToolbar />}
+        {editable && !focusMode && <ScreenplayToolbar />}
         <div className="flex-1 overflow-auto p-4">
           <RichTextPlugin
             contentEditable={
@@ -167,7 +169,7 @@ export function ScreenplayEditor({
       <HistoryPlugin />
       <AutoFormatPlugin />
       <ScreenplayShortcutsPlugin />
-      {editable && <FloatingFormatMenuPlugin />}
+      {editable && !focusMode && <FloatingFormatMenuPlugin />}
       <GenerateImagePlugin />
       <SelectionTrackingPlugin />
       <WordCountPlugin />

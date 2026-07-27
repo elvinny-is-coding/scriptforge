@@ -1,15 +1,31 @@
+// app/(protected)/projects/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { NewProjectDialog } from "@/components/projects/NewProjectDialog";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import { toast } from "sonner";
 import type { Database, Json, TablesInsert } from "@/types/supabase";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
+
+type ProjectWithMeta = Project & {
+  sceneCount: number;
+  wordCount: number;
+};
 
 const EMPTY_LEXICAL_STATE: Json = {
   root: {
@@ -22,19 +38,72 @@ const EMPTY_LEXICAL_STATE: Json = {
   },
 };
 
+function countWordsInLexicalJSON(content: Json): number {
+  const obj = content as any;
+  if (!obj?.root?.children) return 0;
+  let total = 0;
+  for (const child of obj.root.children) {
+    if (child.type === "outline") continue;
+    const text = child.children?.map((c: any) => c.text).join(" ") || "";
+    if (text.trim()) total += text.split(/\s+/).length;
+  }
+  return total;
+}
+
+type SortOption =
+  | "updated"
+  | "title-asc"
+  | "title-desc"
+  | "words-desc"
+  | "scenes-desc";
+
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ProjectWithMeta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortOption, setSortOption] = useState<SortOption>("updated");
+  const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
     const fetchProjects = async () => {
-      const { data } = await supabase
+      const { data: projectList } = await supabase
         .from("projects")
         .select("*")
         .order("updated_at", { ascending: false });
-      setProjects(data ?? []);
+
+      if (!projectList) {
+        setProjects([]);
+        setLoading(false);
+        return;
+      }
+
+      const projectIds = projectList.map((p) => p.id);
+      const { data: allScenes } = await supabase
+        .from("scenes")
+        .select("project_id, content")
+        .in("project_id", projectIds);
+
+      const sceneCountMap: Record<string, number> = {};
+      const wordCountMap: Record<string, number> = {};
+
+      if (allScenes) {
+        for (const scene of allScenes) {
+          sceneCountMap[scene.project_id] =
+            (sceneCountMap[scene.project_id] || 0) + 1;
+          wordCountMap[scene.project_id] =
+            (wordCountMap[scene.project_id] || 0) +
+            countWordsInLexicalJSON(scene.content as Json);
+        }
+      }
+
+      const enriched = projectList.map((p) => ({
+        ...p,
+        sceneCount: sceneCountMap[p.id] || 0,
+        wordCount: wordCountMap[p.id] || 0,
+      }));
+
+      setProjects(enriched);
       setLoading(false);
     };
     fetchProjects();
@@ -68,6 +137,68 @@ export default function ProjectsPage() {
     }
   };
 
+  const handleRename = async (id: string, newTitle: string) => {
+    const { error } = await supabase
+      .from("projects")
+      .update({ title: newTitle })
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to rename project");
+      return;
+    }
+
+    setProjects((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, title: newTitle } : p)),
+    );
+    toast.success("Project renamed");
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("projects").delete().eq("id", id);
+
+    if (error) {
+      toast.error("Failed to delete project");
+      return;
+    }
+
+    setProjects((prev) => prev.filter((p) => p.id !== id));
+    toast.success("Project deleted");
+  };
+
+  // Filter by search query, then sort
+  const processedProjects = useMemo(() => {
+    let filtered = projects;
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((p) => p.title.toLowerCase().includes(query));
+    }
+
+    const sorted = [...filtered];
+    switch (sortOption) {
+      case "updated":
+        sorted.sort(
+          (a, b) =>
+            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+        );
+        break;
+      case "title-asc":
+        sorted.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "title-desc":
+        sorted.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case "words-desc":
+        sorted.sort((a, b) => b.wordCount - a.wordCount);
+        break;
+      case "scenes-desc":
+        sorted.sort((a, b) => b.sceneCount - a.sceneCount);
+        break;
+    }
+    return sorted;
+  }, [projects, sortOption, searchQuery]);
+
   if (loading)
     return (
       <div className="flex justify-center py-12">
@@ -81,20 +212,63 @@ export default function ProjectsPage() {
         <h1 className="text-2xl font-bold">Your Projects</h1>
         <NewProjectDialog onCreate={handleCreate} />
       </div>
-      {projects.length === 0 ? (
+
+      {projects.length > 0 && (
+        <div className="flex items-center gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by title..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-10"
+            />
+          </div>
+
+          <Select
+            value={sortOption}
+            onValueChange={(v) => setSortOption(v as SortOption)}
+          >
+            <SelectTrigger className="w-[180px] h-10">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="updated">Last Updated</SelectItem>
+              <SelectItem value="title-asc">Title A–Z</SelectItem>
+              <SelectItem value="title-desc">Title Z–A</SelectItem>
+              <SelectItem value="words-desc">Most Words</SelectItem>
+              <SelectItem value="scenes-desc">Most Scenes</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {processedProjects.length === 0 ? (
         <EmptyState
-          title="No projects yet"
-          description="Create your first screenplay"
-          action={<NewProjectDialog onCreate={handleCreate} />}
+          title={searchQuery ? "No matching projects" : "No projects yet"}
+          description={
+            searchQuery
+              ? "Try a different search term"
+              : "Create your first screenplay"
+          }
+          action={
+            searchQuery ? undefined : (
+              <NewProjectDialog onCreate={handleCreate} />
+            )
+          }
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {projects.map((p) => (
+          {processedProjects.map((p) => (
             <ProjectCard
               key={p.id}
               id={p.id}
               title={p.title}
               updatedAt={p.updated_at}
+              sceneCount={p.sceneCount}
+              wordCount={p.wordCount}
+              onRename={handleRename}
+              onDelete={handleDelete}
             />
           ))}
         </div>
