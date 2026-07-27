@@ -4,7 +4,9 @@ import {
   LexicalNode,
   SerializedElementNode,
   Spread,
+  RangeSelection,
 } from "lexical";
+import { $createActionNode } from "./ActionNode";
 
 export type SerializedCharacterNode = Spread<
   { type: "character" },
@@ -22,11 +24,20 @@ export class CharacterNode extends ElementNode {
 
   createDOM(): HTMLElement {
     const dom = document.createElement("p");
-    dom.className = "uppercase text-center mt-4 mb-0";
+    dom.className = "character-node block w-full my-1 uppercase text-center";
+    dom.setAttribute(
+      "data-character-name",
+      this.getTextContent().trim().toUpperCase(),
+    );
     return dom;
   }
 
-  updateDOM(): false {
+  updateDOM(prevNode: CharacterNode, dom: HTMLElement): boolean {
+    const prevName = prevNode.getTextContent().trim().toUpperCase();
+    const currentName = this.getTextContent().trim().toUpperCase();
+    if (prevName !== currentName) {
+      dom.setAttribute("data-character-name", currentName);
+    }
     return false;
   }
 
@@ -36,6 +47,15 @@ export class CharacterNode extends ElementNode {
 
   exportJSON(): SerializedCharacterNode {
     return { ...super.exportJSON(), type: "character" };
+  }
+
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection = true,
+  ): ElementNode {
+    const newElement = $createActionNode();
+    this.insertAfter(newElement, restoreSelection);
+    return newElement;
   }
 
   canInsertTextBefore(): boolean {
@@ -54,5 +74,5 @@ export function $createCharacterNode(): CharacterNode {
 export function $isCharacterNode(
   node: LexicalNode | null | undefined,
 ): node is CharacterNode {
-  return node instanceof CharacterNode;
+  return node != null && node.getType() === "character";
 }

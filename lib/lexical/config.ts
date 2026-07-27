@@ -6,6 +6,7 @@ import { CharacterNode } from "@/components/editor/nodes/CharacterNode";
 import { DialogueNode } from "@/components/editor/nodes/DialogueNode";
 import { ParentheticalNode } from "@/components/editor/nodes/ParentheticalNode";
 import { TransitionNode } from "@/components/editor/nodes/TransitionNode";
+import { OutlineNode } from "@/components/editor/nodes/OutlineNode"; // <-- new
 
 export const editorConfig: InitialConfigType = {
   namespace: "ScriptForge",
@@ -16,6 +17,7 @@ export const editorConfig: InitialConfigType = {
     DialogueNode,
     ParentheticalNode,
     TransitionNode,
+    OutlineNode, // <-- added
   ],
   onError: (error: Error) => {
     console.error("Lexical error:", error);
@@ -34,5 +36,7 @@ export const editorConfig: InitialConfigType = {
     dialogue: "ml-12 mr-12 mb-2",
     parenthetical: "ml-16 mr-16 text-sm italic",
     transition: "text-right uppercase text-sm mt-4 mb-2",
+    outline:
+      "bg-accent/50 text-accent-foreground text-sm font-semibold uppercase tracking-wider px-3 py-1 my-3 rounded border-l-4 border-accent", // <-- theme for outline
   },
 };

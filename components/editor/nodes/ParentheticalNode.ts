@@ -4,7 +4,9 @@ import {
   LexicalNode,
   SerializedElementNode,
   Spread,
+  RangeSelection,
 } from "lexical";
+import { $createActionNode } from "./ActionNode";
 
 export type SerializedParentheticalNode = Spread<
   { type: "parenthetical" },
@@ -38,6 +40,15 @@ export class ParentheticalNode extends ElementNode {
 
   exportJSON(): SerializedParentheticalNode {
     return { ...super.exportJSON(), type: "parenthetical" };
+  }
+
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection = true,
+  ): ElementNode {
+    const newElement = $createActionNode();
+    this.insertAfter(newElement, restoreSelection);
+    return newElement;
   }
 
   canInsertTextBefore(): boolean {

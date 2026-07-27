@@ -4,7 +4,9 @@ import {
   LexicalNode,
   SerializedElementNode,
   Spread,
+  RangeSelection,
 } from "lexical";
+import { $createActionNode } from "./ActionNode";
 
 export type SerializedTransitionNode = Spread<
   { type: "transition" },
@@ -36,6 +38,15 @@ export class TransitionNode extends ElementNode {
 
   exportJSON(): SerializedTransitionNode {
     return { ...super.exportJSON(), type: "transition" };
+  }
+
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection = true,
+  ): ElementNode {
+    const newElement = $createActionNode();
+    this.insertAfter(newElement, restoreSelection);
+    return newElement;
   }
 
   canInsertTextBefore(): boolean {

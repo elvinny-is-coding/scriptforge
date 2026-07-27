@@ -12,7 +12,21 @@ import {
   AlertTriangle,
   MessageSquare,
   Lightbulb,
+  RotateCcw,
+  Plus,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { FormattedChatContent } from "@/lib/chat-formatter";
 
 interface BrainstormTabProps {
   currentSceneContent: string;
@@ -82,27 +96,41 @@ export function BrainstormTab({
   };
 
   const handleReset = () => {
-    // Clear local messages
     setMessages([]);
-    // Notify parent to persist reset (delete scene entry from DB)
     onReset?.();
   };
 
   return (
-    <div className="flex flex-col h-full overflow-auto">
-      <div className="p-2 space-y-2 border-b">
-        <div className="flex justify-between items-center mb-2">
+    <div className="flex flex-col h-full">
+      {/* Fixed top: quick prompts and clear chat button */}
+      <div className="p-2 space-y-2 border-b shrink-0">
+        <div className="flex justify-between items-center">
           <span className="text-xs font-semibold text-muted-foreground">
             Quick Prompts
           </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleReset}
-            className="h-6 text-xs px-2"
-          >
-            Reset Session
-          </Button>
+          {messages.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger className="inline-flex items-center justify-center gap-1 rounded-lg border border-destructive/30 text-xs font-medium h-7 px-2 text-destructive hover:bg-destructive/10 cursor-pointer select-none">
+                <RotateCcw className="h-3 w-3" />
+                Clear Chat
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clear chat history?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete the entire brainstorming
+                    session for this scene. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleReset}>
+                    Yes, clear
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-1">
           {quickPrompts.map((p) => (
@@ -120,22 +148,27 @@ export function BrainstormTab({
           ))}
         </div>
       </div>
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+
+      {/* Scrollable chat area */}
+      <ScrollArea className="flex-1 p-4 overflow-scroll" ref={scrollRef}>
         <div className="space-y-4">
           {messages.map((msg, i) => (
             <div
               key={i}
               className={`text-sm ${msg.role === "user" ? "text-right" : ""}`}
             >
-              <span
-                className={`inline-block px-3 py-2 rounded-lg whitespace-pre-wrap ${
-                  msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
-              >
-                {msg.content}
-              </span>
+              {msg.role === "user" ? (
+                <span className="inline-block px-3 py-2 rounded-lg bg-primary text-primary-foreground whitespace-pre-wrap">
+                  {msg.content}
+                </span>
+              ) : (
+                <div className="inline-block max-w-[85%] px-4 py-3 rounded-lg bg-muted text-left">
+                  <FormattedChatContent
+                    text={msg.content}
+                    onInsertCode={(code) => onInsertSuggestion(code)}
+                  />
+                </div>
+              )}
             </div>
           ))}
           {isLoading && (
@@ -145,11 +178,12 @@ export function BrainstormTab({
               </span>
               {output && (
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="mt-1"
+                  className="mt-2 gap-1"
                   onClick={() => onInsertSuggestion(output)}
                 >
+                  <Plus className="h-3 w-3" />
                   Insert
                 </Button>
               )}
@@ -162,7 +196,9 @@ export function BrainstormTab({
           )}
         </div>
       </ScrollArea>
-      <div className="p-2 border-t flex gap-2">
+
+      {/* Fixed bottom: input area */}
+      <div className="p-2 border-t flex gap-2 shrink-0">
         <Textarea
           placeholder="Ask anything about this scene..."
           value={chatInput}

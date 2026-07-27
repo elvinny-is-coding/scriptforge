@@ -1,7 +1,7 @@
 // hooks/useScenes.ts
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type {
   Database,
@@ -47,23 +47,38 @@ export function useScenes(projectId: string | undefined) {
 
   const createScene = async (heading?: string, orderIndex?: number) => {
     if (!projectId) return null;
-    const idx = orderIndex ?? scenes.length;
+
+    // Get the maximum order_index for this project to avoid duplicates
+    const { data: maxData } = await supabase
+      .from("scenes")
+      .select("order_index")
+      .eq("project_id", projectId)
+      .order("order_index", { ascending: false })
+      .limit(1)
+      .single();
+
+    const nextIndex = (maxData?.order_index ?? -1) + 1;
 
     const insertData: TablesInsert<"scenes"> = {
       project_id: projectId,
-      order_index: idx,
+      order_index: nextIndex,
       heading: heading ?? "INT. UNTITLED - DAY",
       content: EMPTY_LEXICAL_STATE,
     };
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("scenes")
       .insert(insertData)
       .select()
       .single();
 
-    if (!data?.id) {
-      console.error("Failed to create scene – no id returned");
+    if (error) {
+      console.error("Supabase insert error:", error.message, error.details);
+      return null;
+    }
+
+    if (!data) {
+      console.error("No data returned from scene insert");
       return null;
     }
 
@@ -80,20 +95,20 @@ export function useScenes(projectId: string | undefined) {
       prev.map((s) => (s.id === sceneId ? { ...s, ...updates } : s)),
     );
 
-    supabase
+    const { error } = await supabase
       .from("scenes")
       .update(updates)
-      .eq("id", sceneId)
-      .then(({ error }) => {
-        if (error) {
-          console.error("Failed to persist scene update:", error.message);
-        }
-      });
+      .eq("id", sceneId);
+
+    if (error) {
+      console.error("Failed to persist scene update:", error.message);
+    }
   };
 
   const deleteScene = async (sceneId: string) => {
-    await supabase.from("scenes").delete().eq("id", sceneId);
-    setScenes((prev) => prev.filter((s) => s.id !== sceneId));
+    const { error } = await supabase.from("scenes").delete().eq("id", sceneId);
+    if (error) console.error("Failed to delete scene:", error.message);
+    else setScenes((prev) => prev.filter((s) => s.id !== sceneId));
   };
 
   const reorderScenes = async (orderedIds: string[]) => {
@@ -119,6 +134,38 @@ export function useScenes(projectId: string | undefined) {
     });
   };
 
+  const characters = useMemo(() => {
+    const names = new Set<string>();
+    scenes.forEach((scene) => {
+      const content = scene.content as any;
+      content?.root?.children?.forEach((child: any) => {
+        if (child.type === "character") {
+          const name = child.children?.[0]?.text?.trim();
+          if (name) names.add(name.toUpperCase());
+        }
+      });
+    });
+    return Array.from(names).sort();
+  }, [scenes]);
+
+  const locations = useMemo(() => {
+    const locs = new Set<string>();
+    scenes.forEach((scene) => {
+      const heading = scene.heading?.trim();
+      if (heading) {
+        const match = heading.match(
+          /^(INT\.|EXT\.|INT\.\/EXT\.|I\/E\.)\s+(.+?)(\s+-\s+.+)?$/i,
+        );
+        if (match && match[2]) {
+          locs.add(match[2].trim().toUpperCase());
+        } else {
+          locs.add(heading.toUpperCase());
+        }
+      }
+    });
+    return Array.from(locs).sort();
+  }, [scenes]);
+
   return {
     scenes,
     loading,
@@ -127,5 +174,7 @@ export function useScenes(projectId: string | undefined) {
     deleteScene,
     reorderScenes,
     refetch: fetchScenes,
+    characters,
+    locations,
   };
 }

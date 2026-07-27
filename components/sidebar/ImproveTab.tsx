@@ -136,8 +136,9 @@ export function ImproveTab({
   const suggestions = parseSuggestions(displayOutput);
 
   return (
-    <div className="flex flex-col h-full overflow-auto">
-      <div className="p-2 border-b space-y-2">
+    <div className="flex flex-col h-full">
+      {/* Fixed top: agent buttons */}
+      <div className="p-2 border-b space-y-2 shrink-0">
         <div className="flex justify-between items-center">
           <span className="text-xs font-semibold text-muted-foreground">
             Improve Agents
@@ -169,6 +170,8 @@ export function ImproveTab({
           ))}
         </div>
       </div>
+
+      {/* Scrollable output area */}
       <ScrollArea className="flex-1 p-4">
         {isLoading && (
           <div className="flex flex-col items-center gap-2 py-8">

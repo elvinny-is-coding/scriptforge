@@ -13,10 +13,14 @@ import { AutoFormatPlugin } from "./plugins/AutoFormatPlugin";
 import { ScreenplayShortcutsPlugin } from "./plugins/ScreenplayShortcutsPlugin";
 import { FloatingFormatMenuPlugin } from "./plugins/FloatingFormatMenuPlugin";
 import { GenerateImagePlugin } from "./plugins/GenerateImagePlugin";
-import { SelectionTrackingPlugin } from "./plugins/SelectionTrackingPlugin"; // <- new
+import { SelectionTrackingPlugin } from "./plugins/SelectionTrackingPlugin";
+import { WordCountPlugin } from "./plugins/WordCountPlugin";
+import { CharacterTrackingPlugin } from "./plugins/CharacterTrackingPlugin";
+import { CharacterColorPlugin } from "./plugins/CharacterColorPlugin";
+import { AutocompletePlugin } from "./plugins/AutocompletePlugin";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { Component, type ReactElement } from "react";
-import { $getSelection, $isRangeSelection } from "lexical";
+import { $getSelection, $isRangeSelection, $getRoot } from "lexical";
 
 interface LexicalErrorBoundaryProps {
   children: ReactElement;
@@ -165,7 +169,11 @@ export function ScreenplayEditor({
       <ScreenplayShortcutsPlugin />
       {editable && <FloatingFormatMenuPlugin />}
       <GenerateImagePlugin />
-      <SelectionTrackingPlugin /> {/* <-- added */}
+      <SelectionTrackingPlugin />
+      <WordCountPlugin />
+      <CharacterTrackingPlugin />
+      <CharacterColorPlugin />
+      <AutocompletePlugin />
       <LoadContentPlugin content={initialContent} />
       <InsertSuggestionPlugin />
       <AutoSaveWrapper onSave={onSave} />

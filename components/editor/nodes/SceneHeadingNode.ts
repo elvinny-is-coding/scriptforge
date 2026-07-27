@@ -4,7 +4,9 @@ import {
   LexicalNode,
   SerializedElementNode,
   Spread,
+  RangeSelection,
 } from "lexical";
+import { $createActionNode } from "./ActionNode";
 
 export type SerializedSceneHeadingNode = Spread<
   { type: "scene-heading" },
@@ -38,6 +40,15 @@ export class SceneHeadingNode extends ElementNode {
 
   exportJSON(): SerializedSceneHeadingNode {
     return { ...super.exportJSON(), type: "scene-heading" };
+  }
+
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection = true,
+  ): ElementNode {
+    const newElement = $createActionNode();
+    this.insertAfter(newElement, restoreSelection);
+    return newElement;
   }
 
   canInsertTextBefore(): boolean {

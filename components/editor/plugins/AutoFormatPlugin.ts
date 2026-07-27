@@ -40,7 +40,12 @@ export function AutoFormatPlugin() {
           return true;
         }
         if ($isCharacterNode(parent)) {
-          parent.insertAfter($createDialogueNode());
+          const charName = parent.getTextContent().trim().toUpperCase();
+          const dialogueNode = $createDialogueNode();
+          if (charName) {
+            dialogueNode.setCharacterName(charName);
+          }
+          parent.insertAfter(dialogueNode);
           parent.selectNext();
           event?.preventDefault();
           return true;
