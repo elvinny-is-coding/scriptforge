@@ -5,7 +5,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,6 +21,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={cn("font-sans", geist.variable)}>
+      <head>
+        <meta
+          name="google-site-verification"
+          content="tOoY4aL45mZ-EaMzSeDE9c4vXKvMCLCrJCjvaBeUKg8"
+        />
+      </head>
       <body className={inter.className}>
         {children}
         <Toaster />
