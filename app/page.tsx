@@ -90,7 +90,7 @@ export default async function Home() {
               </Link>
               <Link
                 href="#features"
-                className="inline-flex h-11 items-center rounded-md px-8 py-3 text-sm font-semibold hover:bg-accent hover:text-accent-foreground"
+                className="inline-flex h-11 border border-gray-200 items-center rounded-md px-8 py-3 text-sm font-semibold hover:bg-accent hover:text-accent-foreground"
               >
                 See what&apos;s inside
               </Link>
