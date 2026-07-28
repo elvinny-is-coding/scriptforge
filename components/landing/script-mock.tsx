@@ -22,7 +22,7 @@ export function ScriptMock({ className }: { className?: string }) {
           </span>
         </p>
       </div>
-      <div className="absolute -bottom-5 -right-4 w-56 rotate-2 rounded-lg border bg-popover p-3 text-xs shadow-md sm:-right-8">
+      <div className="absolute -bottom-18 -right-10 w-56 rotate-2 rounded-lg border bg-popover p-3 text-xs shadow-md sm:-right-8">
         <div className="mb-1 flex items-center gap-1.5 font-medium text-primary">
           <Sparkles className="h-3.5 w-3.5" />
           AI suggestion
