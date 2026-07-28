@@ -27,16 +27,6 @@ export function AuthForm() {
     setLoading(false);
   };
 
-  const handleGoogle = async () => {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${location.origin}/auth/callback` },
-    });
-    if (error) setMessage(error.message);
-    setLoading(false);
-  };
-
   return (
     <div className="w-full max-w-sm space-y-6">
       <div className="text-center">
@@ -60,22 +50,6 @@ export function AuthForm() {
           Send Magic Link
         </Button>
       </form>
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">or</span>
-        </div>
-      </div>
-      <Button
-        variant="outline"
-        className="w-full"
-        onClick={handleGoogle}
-        disabled={loading}
-      >
-        Continue with Google
-      </Button>
       {message && (
         <p className="text-sm text-center text-muted-foreground">{message}</p>
       )}
