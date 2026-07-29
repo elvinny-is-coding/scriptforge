@@ -1,7 +1,7 @@
 // components/scene-list/SceneList.tsx
 "use client";
 
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import { SceneItem } from "./SceneItem";
 import { NewSceneButton } from "./NewSceneButton";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -25,6 +25,7 @@ interface SceneListProps {
   onReorder: (orderedIds: string[]) => void;
   characters: string[];
   onOpenCharacterModal: () => void;
+  generateSummary?: (sceneId: string) => Promise<void>; // new
 }
 
 export function SceneList({
@@ -39,11 +40,46 @@ export function SceneList({
   onReorder,
   characters,
   onOpenCharacterModal,
+  generateSummary,
 }: SceneListProps) {
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [characterFilter, setCharacterFilter] = useState<string>("all");
+
+  // Listen for clicks on scene headings in the editor
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const event = e as CustomEvent<{ heading: string }>;
+      const headingText = event.detail.heading.trim();
+      if (!headingText) return;
+
+      const target = scenes.find(
+        (s) => s.heading.trim().toUpperCase() === headingText.toUpperCase(),
+      );
+      if (!target) return;
+
+      onSelectScene(target.id);
+
+      setTimeout(() => {
+        const el = document.querySelector(`[data-scene-id="${target.id}"]`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+    };
+
+    window.addEventListener("scene-click", handler);
+    return () => window.removeEventListener("scene-click", handler);
+  }, [scenes, onSelectScene]);
+
+  // Lazily generate a summary when a scene is selected for the first time
+  useEffect(() => {
+    if (selectedSceneId && generateSummary) {
+      const scene = scenes.find((s) => s.id === selectedSceneId);
+      if (scene && !scene.summary) {
+        generateSummary(scene.id);
+      }
+    }
+  }, [selectedSceneId, scenes, generateSummary]);
 
   const filteredScenes = useMemo(() => {
     if (characterFilter === "all") return scenes;
@@ -135,6 +171,7 @@ export function SceneList({
         filteredScenes.map((scene, index) => (
           <div
             key={scene.id}
+            data-scene-id={scene.id}
             draggable
             onDragStart={() => handleDragStart(index)}
             onDragOver={(e) => handleDragOver(e, index)}
@@ -148,6 +185,7 @@ export function SceneList({
               onClick={() => onSelectScene(scene.id)}
               onDelete={() => onDeleteScene(scene.id)}
               onRename={onRenameScene}
+              summary={scene.summary}
             />
           </div>
         ))

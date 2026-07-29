@@ -18,6 +18,10 @@ import { WordCountPlugin } from "./plugins/WordCountPlugin";
 import { CharacterTrackingPlugin } from "./plugins/CharacterTrackingPlugin";
 import { CharacterColorPlugin } from "./plugins/CharacterColorPlugin";
 import { AutocompletePlugin } from "./plugins/AutocompletePlugin";
+import { FindReplacePlugin } from "./plugins/FindReplacePlugin";
+import { SceneNumberPlugin } from "./plugins/SceneNumberPlugin";
+import { SceneClickPlugin } from "./plugins/SceneClickPlugin";
+import { InlineRewritePlugin } from "./plugins/InlineRewritePlugin"; // new
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { Component, type ReactElement } from "react";
 import { $getSelection, $isRangeSelection, $getRoot } from "lexical";
@@ -41,7 +45,8 @@ interface ScreenplayEditorProps {
   initialContent: object;
   onSave: (content: object) => Promise<void> | void;
   editable?: boolean;
-  focusMode?: boolean; // restored
+  focusMode?: boolean;
+  sceneNumber?: number;
 }
 
 function AutoSaveWrapper({ onSave }: { onSave: (content: object) => void }) {
@@ -51,10 +56,18 @@ function AutoSaveWrapper({ onSave }: { onSave: (content: object) => void }) {
     onSaveRef.current = onSave;
   }, [onSave]);
 
-  const { save } = useAutoSave(async () => {
+  const { save, isSaving } = useAutoSave(async () => {
     const state = editor.getEditorState();
     onSaveRef.current(state.toJSON());
   }, [editor]);
+
+  useEffect(() => {
+    if (isSaving) {
+      window.dispatchEvent(new Event("autosave-start"));
+    } else {
+      window.dispatchEvent(new Event("autosave-end"));
+    }
+  }, [isSaving]);
 
   useEffect(() => {
     return editor.registerUpdateListener(() => {
@@ -130,11 +143,31 @@ function InsertSuggestionPlugin() {
   return null;
 }
 
+function ManualSavePlugin({ onSave }: { onSave: (content: object) => void }) {
+  const [editor] = useLexicalComposerContext();
+  const onSaveRef = useRef(onSave);
+  useEffect(() => {
+    onSaveRef.current = onSave;
+  }, [onSave]);
+
+  useEffect(() => {
+    const handler = () => {
+      const state = editor.getEditorState();
+      onSaveRef.current(state.toJSON());
+    };
+    window.addEventListener("manual-save", handler);
+    return () => window.removeEventListener("manual-save", handler);
+  }, [editor]);
+
+  return null;
+}
+
 export function ScreenplayEditor({
   initialContent,
   onSave,
   editable = true,
   focusMode = false,
+  sceneNumber,
 }: ScreenplayEditorProps) {
   const isContentValid =
     initialContent &&
@@ -155,7 +188,7 @@ export function ScreenplayEditor({
         <div className="flex-1 overflow-auto p-4">
           <RichTextPlugin
             contentEditable={
-              <ContentEditable className="outline-none min-h-full" />
+              <ContentEditable className="outline-none min-h-full" spellCheck />
             }
             placeholder={
               <div className="text-muted-foreground/50">
@@ -176,6 +209,13 @@ export function ScreenplayEditor({
       <CharacterTrackingPlugin />
       <CharacterColorPlugin />
       <AutocompletePlugin />
+      <FindReplacePlugin />
+      <SceneClickPlugin />
+      <InlineRewritePlugin /> {/* right‑click rewrite */}
+      {sceneNumber !== undefined && (
+        <SceneNumberPlugin sceneNumber={sceneNumber} />
+      )}
+      <ManualSavePlugin onSave={onSave} />
       <LoadContentPlugin content={initialContent} />
       <InsertSuggestionPlugin />
       <AutoSaveWrapper onSave={onSave} />

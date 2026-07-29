@@ -14,9 +14,17 @@ interface SceneItemProps {
   onClick: () => void;
   onDelete: () => void;
   onRename: (sceneId: string, newHeading: string) => void;
+  summary?: string | null;
 }
 
-export function SceneItem({ scene, isSelected, onClick, onDelete, onRename }: SceneItemProps) {
+export function SceneItem({
+  scene,
+  isSelected,
+  onClick,
+  onDelete,
+  onRename,
+  summary,
+}: SceneItemProps) {
   const [editing, setEditing] = useState(false);
   const [tempHeading, setTempHeading] = useState(scene.heading);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -37,12 +45,14 @@ export function SceneItem({ scene, isSelected, onClick, onDelete, onRename }: Sc
   return (
     <div
       onClick={onClick}
-      className={`flex items-center justify-between p-2 rounded cursor-pointer text-sm group ${
+      className={`group relative flex items-center justify-between p-2 rounded cursor-pointer text-sm ${
         isSelected ? "bg-accent" : "hover:bg-muted"
       }`}
     >
       <div className="truncate flex-1 min-w-0">
-        <span className="text-xs text-muted-foreground mr-1">{scene.order_index + 1}.</span>
+        <span className="text-xs text-muted-foreground mr-1">
+          {scene.order_index + 1}.
+        </span>
         {editing ? (
           <input
             ref={inputRef}
@@ -72,11 +82,22 @@ export function SceneItem({ scene, isSelected, onClick, onDelete, onRename }: Sc
           </span>
         )}
       </div>
+
+      {/* Summary tooltip */}
+      {summary && (
+        <div className="absolute top-full left-0 mt-1 hidden group-hover:block z-10 p-2 rounded-md bg-popover text-popover-foreground shadow-md text-xs max-w-xs">
+          {summary}
+        </div>
+      )}
+
       <Button
         variant="ghost"
         size="icon"
         className="h-6 w-6 opacity-0 group-hover:opacity-100"
-        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
       >
         <Trash2 className="h-3 w-3" />
       </Button>

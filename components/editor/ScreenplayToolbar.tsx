@@ -11,7 +11,15 @@ import {
   $isRootOrShadowRoot,
 } from "lexical";
 import { Button } from "@/components/ui/button";
-import { Bold, Italic, Underline, User, MessageCircle } from "lucide-react";
+import {
+  Bold,
+  Italic,
+  Underline,
+  User,
+  MessageCircle,
+  Check,
+  Loader2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { mergeRegister } from "@lexical/utils";
 import { $isCharacterNode, $createCharacterNode } from "./nodes/CharacterNode";
@@ -26,6 +34,11 @@ export function ScreenplayToolbar() {
   const [isDialogue, setIsDialogue] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [pageCount, setPageCount] = useState(1);
+
+  // autosave indicator state
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
+    "idle",
+  );
 
   useEffect(() => {
     const unregister = mergeRegister(
@@ -60,16 +73,32 @@ export function ScreenplayToolbar() {
       window.removeEventListener("wordcount-change", handler as EventListener);
   }, []);
 
+  // Listen for autosave events
+  useEffect(() => {
+    const onStart = () => setSaveState("saving");
+    const onEnd = () => {
+      setSaveState("saved");
+      const timer = setTimeout(() => setSaveState("idle"), 2000);
+      // cleanup if component unmounts before timeout
+      return () => clearTimeout(timer);
+    };
+
+    window.addEventListener("autosave-start", onStart);
+    window.addEventListener("autosave-end", onEnd);
+    return () => {
+      window.removeEventListener("autosave-start", onStart);
+      window.removeEventListener("autosave-end", onEnd);
+    };
+  }, []);
+
   /** Helper: walk up from the anchor node to the nearest top‑level block (parent is root) */
   function getBlockParent(): any {
     const selection = $getSelection();
     if (!$isRangeSelection(selection)) return null;
     let node: any = selection.anchor.getNode();
-    // If we're inside a text node, move to its parent block
     if (node.getType() === "text") {
       node = node.getParent();
     }
-    // Walk up until the parent is the root (or node itself is root)
     while (
       node &&
       !$isRootOrShadowRoot(node) &&
@@ -78,7 +107,7 @@ export function ScreenplayToolbar() {
     ) {
       node = node.getParent();
     }
-    return node; // top-level block (or root if empty)
+    return node;
   }
 
   /** Replace the entire current block with a Character node */
@@ -194,6 +223,23 @@ export function ScreenplayToolbar() {
       </Button>
 
       <div className="flex-1" />
+
+      {/* Autosave indicator */}
+      <span className="flex items-center gap-1 text-xs text-muted-foreground px-1">
+        {saveState === "saving" && (
+          <>
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Saving…
+          </>
+        )}
+        {saveState === "saved" && (
+          <>
+            <Check className="h-3 w-3 text-green-500" />
+            Saved
+          </>
+        )}
+      </span>
+
       <span className="text-xs text-muted-foreground px-2">
         {wordCount} words · ~{pageCount} page{pageCount !== 1 ? "s" : ""}
       </span>

@@ -25,6 +25,7 @@ const shortcuts = [
   { keys: "Ctrl+Shift+Right", description: "Cycle element forward" },
   { keys: "Ctrl+Shift+Left", description: "Cycle element backward" },
   { keys: "Ctrl+Space", description: "Open autocomplete" },
+  { keys: "Ctrl+H", description: "Find & Replace" },
   { keys: "Enter", description: "Accept autocomplete suggestion" },
   { keys: "Tab", description: "Accept autocomplete suggestion" },
   { keys: "Esc", description: "Dismiss autocomplete" },

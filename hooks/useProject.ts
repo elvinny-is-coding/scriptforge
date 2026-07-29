@@ -23,6 +23,7 @@ export function useProject(projectId: string | undefined) {
   const [characterColors, setCharacterColors] = useState<
     Record<string, string>
   >({});
+  const [notes, setNotes] = useState<Json>({});
 
   useEffect(() => {
     if (!projectId) return;
@@ -46,6 +47,7 @@ export function useProject(projectId: string | undefined) {
       setCharacterColors(
         (data?.character_colors as Record<string, string>) ?? {},
       );
+      setNotes((data?.notes as Json) ?? {});
       setLoading(false);
     };
     fetchProject();
@@ -175,6 +177,24 @@ export function useProject(projectId: string | undefined) {
     [projectId],
   );
 
+  const updateNotes = useCallback(
+    (newNotes: Json): Promise<void> => {
+      if (!projectId) return Promise.resolve();
+      setNotes(newNotes);
+      return Promise.resolve(
+        supabase
+          .from("projects")
+          .update({ notes: newNotes })
+          .eq("id", projectId)
+          .then(({ error }) => {
+            if (error)
+              console.error("Failed to persist project notes:", error.message);
+          }),
+      );
+    },
+    [projectId],
+  );
+
   const updateProject = async (updates: {
     title?: string;
     style_sheet?: any;
@@ -209,5 +229,7 @@ export function useProject(projectId: string | undefined) {
     resetImproveScene,
     characterColors,
     updateCharacterColors,
+    notes,
+    updateNotes,
   };
 }

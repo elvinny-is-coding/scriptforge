@@ -1,13 +1,14 @@
 // hooks/useAutoSave.ts
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 
 export function useAutoSave(
   callback: () => Promise<void> | void,
   deps: any[],
-  delay: number = 2000,
+  delay: number = 5000,
 ) {
+  const [isSaving, setIsSaving] = useState(false);
   const savedCallback = useRef(callback);
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
@@ -17,18 +18,28 @@ export function useAutoSave(
 
   const save = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      savedCallback.current();
+    timeoutRef.current = setTimeout(async () => {
+      // Start the actual save
+      setIsSaving(true);
+      try {
+        const result = savedCallback.current();
+        if (result instanceof Promise) {
+          await result;
+        }
+      } finally {
+        setIsSaving(false);
+      }
     }, delay);
   }, [delay]);
 
-  // call save whenever deps change
+  // Call save whenever deps change
   useEffect(() => {
     save();
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      setIsSaving(false); // cleanup on unmount
     };
   }, deps);
 
-  return { save };
+  return { save, isSaving };
 }

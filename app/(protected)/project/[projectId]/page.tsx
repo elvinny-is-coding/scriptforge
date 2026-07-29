@@ -13,10 +13,13 @@ import { SceneList } from "@/components/scene-list/SceneList";
 import { ScreenplayEditor } from "@/components/editor/ScreenplayEditor";
 import { SidebarPanel } from "@/components/sidebar/SidebarPanel";
 import { CharacterDialogueModal } from "@/components/sidebar/CharacterDialogueModal";
+import { ProjectNotesModal } from "@/components/projects/ProjectNotesModal";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import { HelpDialog } from "@/components/help/HelpDialog";
 import { ShortcutsDialog } from "@/components/help/ShortcutsDialog";
 import { MoodBoardPanel } from "@/components/moodboard/MoodBoardPanel";
+import { FindReplacePanel } from "@/components/overlays/FindReplacePanel";
+import { ShareDialog } from "@/components/share/ShareDialog"; // new
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CharacterColorsProvider } from "@/contexts/CharacterColorsContext";
 import { Button } from "@/components/ui/button";
@@ -27,6 +30,8 @@ import {
   ArrowLeft,
   HelpCircle,
   Keyboard,
+  StickyNote,
+  Share2,
   Trash2,
 } from "lucide-react";
 import type { Json } from "@/types/supabase";
@@ -49,6 +54,8 @@ export default function ProjectPage() {
     resetImproveScene,
     characterColors,
     updateCharacterColors,
+    notes,
+    updateNotes,
   } = useProject(projectId);
 
   const {
@@ -58,18 +65,46 @@ export default function ProjectPage() {
     updateScene,
     deleteScene,
     reorderScenes,
+    generateSummary,
   } = useScenes(projectId);
 
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [selectedText, setSelectedText] = useState("");
   const [characters, setCharacters] = useState<string[]>([]);
   const [isCharacterModalOpen, setCharacterModalOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  const [findReplaceOpen, setFindReplaceOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false); // new
 
   const { addImage } = useMoodBoard(projectId);
+
+  // ---------- Keyboard shortcut: Ctrl+S → manual save ----------
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        window.dispatchEvent(new Event("manual-save"));
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // ---------- Keyboard shortcut for Find & Replace (Ctrl+H) ----------
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "h") {
+        e.preventDefault();
+        setFindReplaceOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   // ---------- Image generation listener ----------
   useEffect(() => {
@@ -138,6 +173,10 @@ export default function ProjectPage() {
   }, [scenes, selectedSceneId]);
 
   const currentScene = scenes.find((s) => s.id === selectedSceneId);
+  const sceneNumber = currentScene
+    ? (currentScene.order_index ?? 0) + 1
+    : undefined;
+
   const { snapshots, createSnapshot, deleteSnapshot } = useSnapshots(
     selectedSceneId ?? undefined,
   );
@@ -209,6 +248,7 @@ export default function ProjectPage() {
       onReorder={reorderScenes}
       characters={characters}
       onOpenCharacterModal={() => setCharacterModalOpen(true)}
+      generateSummary={generateSummary}
     />
   );
 
@@ -219,6 +259,7 @@ export default function ProjectPage() {
         initialContent={currentScene.content as object}
         onSave={handleSave}
         focusMode={focusMode}
+        sceneNumber={sceneNumber}
       />
     </CharacterColorsProvider>
   ) : (
@@ -364,6 +405,22 @@ export default function ProjectPage() {
       <Button
         variant="ghost"
         size="icon"
+        onClick={() => setNotesOpen(true)}
+        title="Project Notes"
+      >
+        <StickyNote className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setShareOpen(true)}
+        title="Share"
+      >
+        <Share2 className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => setShortcutsOpen(true)}
         title="Keyboard Shortcuts"
       >
@@ -392,7 +449,7 @@ export default function ProjectPage() {
   );
 
   return (
-    <div className={focusMode ? "h-full flex flex-col" : ""}>
+    <div className={focusMode ? "h-full flex flex-col" : "relative"}>
       {focusMode && (
         <div className="absolute top-2 right-2 z-50">
           <Button
@@ -425,6 +482,21 @@ export default function ProjectPage() {
         characters={characters}
         characterColors={characterColors}
         onUpdateCharacterColors={updateCharacterColors}
+      />
+      <ProjectNotesModal
+        open={notesOpen}
+        onOpenChange={setNotesOpen}
+        notes={notes}
+        onSave={updateNotes}
+      />
+      <ShareDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        projectId={projectId}
+      />
+      <FindReplacePanel
+        open={findReplaceOpen}
+        onClose={() => setFindReplaceOpen(false)}
       />
     </div>
   );

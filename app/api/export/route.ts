@@ -4,17 +4,14 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/supabase";
 import { jsPDF } from "jspdf";
 
-// Constants for page layout (in mm)
-const PAGE_WIDTH = 215.9; // US Letter
+const PAGE_WIDTH = 215.9;
 const PAGE_HEIGHT = 279.4;
-const MARGIN_LEFT = 25.4; // 1 inch
+const MARGIN_LEFT = 25.4;
 const MARGIN_RIGHT = 25.4;
 const MARGIN_TOP = 25.4;
 const MARGIN_BOTTOM = 25.4;
-
 const USABLE_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
 
-// Helper to add text with line wrapping and automatic page breaks
 function addFormattedText(
   doc: jsPDF,
   text: string,
@@ -23,7 +20,7 @@ function addFormattedText(
     fontSize?: number;
     align?: "left" | "center" | "right";
     bold?: boolean;
-    indent?: number; // extra left indent (mm)
+    indent?: number;
     lineSpacing?: number;
   } = {},
 ): number {
@@ -37,27 +34,85 @@ function addFormattedText(
 
   doc.setFont("Courier", bold ? "bold" : "normal");
   doc.setFontSize(fontSize);
-
   const x = MARGIN_LEFT + indent;
   const maxWidth = USABLE_WIDTH - indent;
-
-  // Split text into lines that fit
   const lines = doc.splitTextToSize(text, maxWidth);
 
   for (const line of lines as string[]) {
-    // Check if we need a new page
     if (y + lineSpacing * (fontSize * 0.3528) > PAGE_HEIGHT - MARGIN_BOTTOM) {
       doc.addPage();
       y = MARGIN_TOP;
     }
-
     doc.text(line, x, y, { align, maxWidth });
-    y += lineSpacing * (fontSize * 0.3528); // convert pt to mm approx (1pt = 0.3528mm)
+    y += lineSpacing * (fontSize * 0.3528);
   }
-
   return y;
 }
 
+// ---------- FDX helpers ----------
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function mapNodeTypeToFdxType(lexicalType: string): string {
+  switch (lexicalType) {
+    case "scene-heading":
+      return "Scene Heading";
+    case "action":
+      return "Action";
+    case "character":
+      return "Character";
+    case "dialogue":
+      return "Dialogue";
+    case "parenthetical":
+      return "Parenthetical";
+    case "transition":
+      return "Transition";
+    default:
+      return "Action";
+  }
+}
+
+function generateFdx(
+  scenes: Database["public"]["Tables"]["scenes"]["Row"][],
+  title: string,
+): string {
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<FinalDraft DocumentType="Script" Template="No" Version="5">
+  <Content>
+`;
+  for (const scene of scenes) {
+    const heading = scene.heading?.trim() || "";
+    const content = scene.content as any;
+    const children = content?.root?.children;
+    xml += `    <Paragraph Type="Scene Heading">
+      <Text>${escapeXml(heading)}</Text>
+    </Paragraph>
+`;
+    if (children) {
+      for (const child of children) {
+        const nodeType = child.type;
+        if (nodeType === "outline") continue;
+        const text = child.children?.map((c: any) => c.text).join("") || "";
+        const fdxType = mapNodeTypeToFdxType(nodeType);
+        xml += `    <Paragraph Type="${fdxType}">
+      <Text>${escapeXml(text)}</Text>
+    </Paragraph>
+`;
+      }
+    }
+  }
+  xml += `  </Content>
+</FinalDraft>`;
+  return xml;
+}
+
+// ---------- Main export handler ----------
 export async function POST(req: NextRequest) {
   const supabase = await createServerSupabaseClient();
   const { projectId, format } = await req.json();
@@ -66,7 +121,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing projectId" }, { status: 400 });
   }
 
-  // Verify user owns project and fetch title
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .select("id, user_id, title")
@@ -77,7 +131,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  // Fetch scenes ordered by order_index
   const { data: scenesData, error } = await supabase
     .from("scenes")
     .select("*")
@@ -91,13 +144,19 @@ export async function POST(req: NextRequest) {
   const scenes = (scenesData ??
     []) as Database["public"]["Tables"]["scenes"]["Row"][];
 
-  // Handle different formats
-  if (format === "pdf") {
+  if (format === "fdx") {
+    const fdxXml = generateFdx(scenes, project.title);
+    return new NextResponse(fdxXml, {
+      headers: {
+        "Content-Type": "application/xml; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${project.title || "script"}.fdx"`,
+      },
+    });
+  } else if (format === "pdf") {
     return generatePdf(scenes, project.title);
   } else if (format === "plaintext") {
     return generatePlainText(scenes, project.title);
   } else {
-    // Default to Fountain
     return generateFountain(scenes, project.title);
   }
 }
@@ -108,8 +167,6 @@ async function generatePdf(
 ) {
   const doc = new jsPDF({ unit: "mm", format: "letter" });
   doc.setFont("Courier");
-
-  // ----- Title page -----
   doc.setFontSize(24);
   doc.text(title || "Untitled Script", PAGE_WIDTH / 2, PAGE_HEIGHT / 2 - 20, {
     align: "center",
@@ -121,71 +178,62 @@ async function generatePdf(
     day: "numeric",
   });
   doc.text(date, PAGE_WIDTH / 2, PAGE_HEIGHT / 2 + 20, { align: "center" });
-
-  // Start content on new page
   doc.addPage();
   let y = MARGIN_TOP;
 
-  // ----- Content pages -----
   for (const scene of scenes) {
     const heading = scene.heading?.trim() || "";
-    const content = scene.content as any;
-    const children = content?.root?.children;
-
-    // Scene heading
     y = addFormattedText(doc, heading, y, { bold: true, fontSize: 12 });
-
-    if (children) {
-      for (const child of children) {
+    const content = scene.content as any;
+    if (content?.root?.children) {
+      for (const child of content.root.children) {
         const nodeType = child.type;
         if (nodeType === "outline") continue;
-
         const text = child.children?.map((c: any) => c.text).join("") || "";
-
-        if (nodeType === "action") {
-          y = addFormattedText(doc, text, y);
-        } else if (nodeType === "character") {
-          y = addFormattedText(doc, text.toUpperCase(), y, {
-            align: "center",
-            bold: true,
-            indent: 50, // center roughly
-          });
-        } else if (nodeType === "dialogue") {
-          y = addFormattedText(doc, text, y, { indent: 25, lineSpacing: 1.2 });
-        } else if (nodeType === "parenthetical") {
-          y = addFormattedText(doc, `(${text})`, y, {
-            indent: 30,
-            fontSize: 10,
-            lineSpacing: 1,
-          });
-        } else if (nodeType === "transition") {
-          y = addFormattedText(doc, text.toUpperCase(), y, {
-            align: "right",
-            bold: true,
-          });
+        switch (nodeType) {
+          case "action":
+            y = addFormattedText(doc, text, y);
+            break;
+          case "character":
+            y = addFormattedText(doc, text.toUpperCase(), y, {
+              align: "center",
+              bold: true,
+              indent: 50,
+            });
+            break;
+          case "dialogue":
+            y = addFormattedText(doc, text, y, {
+              indent: 25,
+              lineSpacing: 1.2,
+            });
+            break;
+          case "parenthetical":
+            y = addFormattedText(doc, `(${text})`, y, {
+              indent: 30,
+              fontSize: 10,
+              lineSpacing: 1,
+            });
+            break;
+          case "transition":
+            y = addFormattedText(doc, text.toUpperCase(), y, {
+              align: "right",
+              bold: true,
+            });
+            break;
         }
       }
     }
-
-    // Space between scenes
-    y += 6; // 2 lines
+    y += 6;
   }
 
-  // ----- Page numbers (after all content) -----
-  const totalPages = doc.internal.pages.length - 1; // pages are 1-indexed
+  const totalPages = doc.internal.pages.length - 1;
   for (let i = 2; i <= totalPages; i++) {
-    // skip title page (i=1)
     doc.setPage(i);
     doc.setFontSize(10);
-    doc.text(
-      `Page ${i - 1}`, // content page numbers start at 1
-      PAGE_WIDTH / 2,
-      PAGE_HEIGHT - MARGIN_BOTTOM + 5,
-      { align: "center" },
-    );
+    doc.text(`Page ${i - 1}`, PAGE_WIDTH / 2, PAGE_HEIGHT - MARGIN_BOTTOM + 5, {
+      align: "center",
+    });
   }
-
-  // Output as ArrayBuffer and send
   const pdfOutput = doc.output("arraybuffer");
   return new NextResponse(pdfOutput, {
     headers: {
@@ -201,32 +249,26 @@ function generateFountain(
 ) {
   let output = "";
   for (const scene of scenes) {
-    const heading = scene.heading?.trim() || "";
-    output += heading + "\n";
+    output += (scene.heading?.trim() || "") + "\n";
     const content = scene.content as any;
     if (content?.root?.children) {
       for (const child of content.root.children) {
         const nodeType = child.type;
-        const text = child.children?.map((c: any) => c.text).join("") || "";
         if (nodeType === "outline") continue;
+        const text = child.children?.map((c: any) => c.text).join("") || "";
         if (nodeType === "scene-heading") {
-          // Already added heading
-        } else if (nodeType === "action") {
-          output += text + "\n";
-        } else if (nodeType === "character") {
+          /* already added */
+        } else if (nodeType === "action") output += text + "\n";
+        else if (nodeType === "character")
           output += "\n" + text.toUpperCase() + "\n";
-        } else if (nodeType === "dialogue") {
-          output += text + "\n";
-        } else if (nodeType === "parenthetical") {
-          output += "(" + text + ")\n";
-        } else if (nodeType === "transition") {
+        else if (nodeType === "dialogue") output += text + "\n";
+        else if (nodeType === "parenthetical") output += "(" + text + ")\n";
+        else if (nodeType === "transition")
           output += "\n" + text.toUpperCase() + "\n";
-        }
       }
     }
     output += "\n\n";
   }
-
   return new NextResponse(output.trim(), {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
@@ -250,7 +292,6 @@ function generatePlainText(
       }
     }
   }
-
   return new NextResponse(output.trim(), {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",

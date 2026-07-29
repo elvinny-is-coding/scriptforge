@@ -4,6 +4,7 @@ import { Inter, Geist } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -20,7 +21,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)}>
+    <html
+      lang="en"
+      className={cn("font-sans", geist.variable)}
+      suppressHydrationWarning
+    >
       <head>
         <meta
           name="google-site-verification"
@@ -28,8 +33,10 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        {children}
-        <Toaster />
+        <ThemeProvider>
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

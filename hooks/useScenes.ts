@@ -89,7 +89,12 @@ export function useScenes(projectId: string | undefined) {
 
   const updateScene = async (
     sceneId: string,
-    updates: { heading?: string; content?: Json; status?: string },
+    updates: {
+      heading?: string;
+      content?: Json;
+      status?: string;
+      summary?: string | null;
+    },
   ) => {
     setScenes((prev) =>
       prev.map((s) => (s.id === sceneId ? { ...s, ...updates } : s)),
@@ -134,6 +139,24 @@ export function useScenes(projectId: string | undefined) {
     });
   };
 
+  const generateSummary = async (sceneId: string) => {
+    const scene = scenes.find((s) => s.id === sceneId);
+    if (!scene) return;
+
+    try {
+      const res = await fetch("/api/groq/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sceneContent: scene.content }),
+      });
+      if (!res.ok) throw new Error("Failed to generate summary");
+      const { summary } = await res.json();
+      await updateScene(sceneId, { summary });
+    } catch (err) {
+      console.error("Summary generation error:", err);
+    }
+  };
+
   const characters = useMemo(() => {
     const names = new Set<string>();
     scenes.forEach((scene) => {
@@ -176,5 +199,6 @@ export function useScenes(projectId: string | undefined) {
     refetch: fetchScenes,
     characters,
     locations,
+    generateSummary,
   };
 }
