@@ -8,6 +8,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -41,6 +42,8 @@ interface ProjectCardProps {
   updatedAt: string;
   sceneCount?: number;
   wordCount?: number;
+  genre?: string | null;
+  tags?: string[];
   onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
 }
@@ -51,6 +54,8 @@ export function ProjectCard({
   updatedAt,
   sceneCount = 0,
   wordCount = 0,
+  genre,
+  tags = [],
   onRename,
   onDelete,
 }: ProjectCardProps) {
@@ -78,9 +83,16 @@ export function ProjectCard({
       >
         <CardHeader>
           <div className="flex items-start justify-between">
-            <CardTitle className="text-lg flex-1">{title}</CardTitle>
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-lg truncate">{title}</CardTitle>
+              {genre && (
+                <Badge variant="secondary" className="mt-1 text-xs">
+                  {genre}
+                </Badge>
+              )}
+            </div>
             <div
-              className="flex items-center"
+              className="flex items-center ml-2 shrink-0"
               onClick={(e) => e.stopPropagation()}
             >
               <DropdownMenu>
@@ -112,7 +124,7 @@ export function ProjectCard({
               </DropdownMenu>
             </div>
           </div>
-          <CardDescription className="flex flex-col gap-1">
+          <CardDescription className="flex flex-col gap-1 mt-1">
             <span>Updated {formatDistanceToNow(updatedAt)}</span>
             <span className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
@@ -124,6 +136,19 @@ export function ProjectCard({
                 {wordCount.toLocaleString()} word{wordCount !== 1 ? "s" : ""}
               </span>
             </span>
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {tags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="text-[10px] px-1.5 py-0"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </CardDescription>
         </CardHeader>
       </Card>

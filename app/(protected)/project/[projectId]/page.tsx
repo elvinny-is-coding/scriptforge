@@ -14,12 +14,13 @@ import { ScreenplayEditor } from "@/components/editor/ScreenplayEditor";
 import { SidebarPanel } from "@/components/sidebar/SidebarPanel";
 import { CharacterDialogueModal } from "@/components/sidebar/CharacterDialogueModal";
 import { ProjectNotesModal } from "@/components/projects/ProjectNotesModal";
+import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { ExportDialog } from "@/components/export/ExportDialog";
 import { HelpDialog } from "@/components/help/HelpDialog";
 import { ShortcutsDialog } from "@/components/help/ShortcutsDialog";
 import { MoodBoardPanel } from "@/components/moodboard/MoodBoardPanel";
 import { FindReplacePanel } from "@/components/overlays/FindReplacePanel";
-import { ShareDialog } from "@/components/share/ShareDialog"; // new
+import { ShareDialog } from "@/components/share/ShareDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CharacterColorsProvider } from "@/contexts/CharacterColorsContext";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import {
   Keyboard,
   StickyNote,
   Share2,
+  Pencil,
   Trash2,
 } from "lucide-react";
 import type { Json } from "@/types/supabase";
@@ -56,6 +58,9 @@ export default function ProjectPage() {
     updateCharacterColors,
     notes,
     updateNotes,
+    genre,
+    tags,
+    updateProject,
   } = useProject(projectId);
 
   const {
@@ -73,12 +78,13 @@ export default function ProjectPage() {
   const [characters, setCharacters] = useState<string[]>([]);
   const [isCharacterModalOpen, setCharacterModalOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
+  const [editProjectOpen, setEditProjectOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [findReplaceOpen, setFindReplaceOpen] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false); // new
+  const [shareOpen, setShareOpen] = useState(false);
 
   const { addImage } = useMoodBoard(projectId);
 
@@ -345,18 +351,15 @@ export default function ProjectPage() {
                     onClick={() => {
                       if (!selectedSceneId) return;
                       const payload = s.content as any;
-                      // Restore editor content
                       updateScene(selectedSceneId, {
                         content: payload.editorContent,
                       });
-                      // Restore brainstorm messages if present
                       if (payload.brainstormMessages) {
                         updateBrainstormMessages((prev) => ({
                           ...prev,
                           [selectedSceneId]: payload.brainstormMessages,
                         }));
                       }
-                      // Restore improve outputs if present
                       if (payload.improveOutput) {
                         updateImproveOutputs((prev) => ({
                           ...prev,
@@ -402,6 +405,14 @@ export default function ProjectPage() {
         </Button>
       }
     >
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setEditProjectOpen(true)}
+        title="Edit Project Details"
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
       <Button
         variant="ghost"
         size="icon"
@@ -488,6 +499,14 @@ export default function ProjectPage() {
         onOpenChange={setNotesOpen}
         notes={notes}
         onSave={updateNotes}
+      />
+      <EditProjectDialog
+        open={editProjectOpen}
+        onOpenChange={setEditProjectOpen}
+        title={project?.title || "Untitled"}
+        genre={genre ?? null}
+        tags={tags as string[]}
+        onSave={updateProject}
       />
       <ShareDialog
         open={shareOpen}

@@ -35,6 +35,7 @@ export function useScenes(projectId: string | undefined) {
       .from("scenes")
       .select("*")
       .eq("project_id", projectId)
+      .is("deleted_at", null) // ← exclude soft‑deleted scenes
       .order("order_index");
     setScenes(data ?? []);
     setLoading(false);
@@ -48,11 +49,11 @@ export function useScenes(projectId: string | undefined) {
   const createScene = async (heading?: string, orderIndex?: number) => {
     if (!projectId) return null;
 
-    // Get the maximum order_index for this project to avoid duplicates
     const { data: maxData } = await supabase
       .from("scenes")
       .select("order_index")
       .eq("project_id", projectId)
+      .is("deleted_at", null)
       .order("order_index", { ascending: false })
       .limit(1)
       .single();
@@ -110,6 +111,36 @@ export function useScenes(projectId: string | undefined) {
     }
   };
 
+  // Soft‑delete: sets deleted_at timestamp
+  const softDeleteScene = async (sceneId: string) => {
+    const { error } = await supabase
+      .from("scenes")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", sceneId);
+    if (error) {
+      console.error("Failed to soft‑delete scene:", error.message);
+      return false;
+    }
+    setScenes((prev) => prev.filter((s) => s.id !== sceneId));
+    return true;
+  };
+
+  // Restore from trash
+  const restoreScene = async (sceneId: string, projectIdToRestore: string) => {
+    const { error } = await supabase
+      .from("scenes")
+      .update({ deleted_at: null })
+      .eq("id", sceneId);
+    if (error) {
+      console.error("Failed to restore scene:", error.message);
+      return false;
+    }
+    // Refetch to get the proper order
+    await fetchScenes();
+    return true;
+  };
+
+  // Permanent delete
   const deleteScene = async (sceneId: string) => {
     const { error } = await supabase.from("scenes").delete().eq("id", sceneId);
     if (error) console.error("Failed to delete scene:", error.message);
@@ -194,6 +225,8 @@ export function useScenes(projectId: string | undefined) {
     loading,
     createScene,
     updateScene,
+    softDeleteScene,
+    restoreScene,
     deleteScene,
     reorderScenes,
     refetch: fetchScenes,

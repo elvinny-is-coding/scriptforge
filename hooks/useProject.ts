@@ -195,10 +195,9 @@ export function useProject(projectId: string | undefined) {
     [projectId],
   );
 
-  const updateProject = async (updates: {
-    title?: string;
-    style_sheet?: any;
-  }) => {
+  const updateProject = async (
+    updates: Partial<Database["public"]["Tables"]["projects"]["Update"]>,
+  ) => {
     if (!projectId) return;
     const { data, error } = await supabase
       .from("projects")
@@ -231,5 +230,7 @@ export function useProject(projectId: string | undefined) {
     updateCharacterColors,
     notes,
     updateNotes,
+    genre: project?.genre ?? null,
+    tags: (project?.tags as string[]) ?? [],
   };
 }
