@@ -68,7 +68,7 @@ export default function ProjectPage() {
     loading: scenesLoading,
     createScene,
     updateScene,
-    deleteScene,
+    softDeleteScene,
     reorderScenes,
     generateSummary,
   } = useScenes(projectId);
@@ -248,7 +248,7 @@ export default function ProjectPage() {
         if (scene) setSelectedSceneId(scene.id);
       }}
       onDeleteScene={async (id) => {
-        await deleteScene(id);
+        await softDeleteScene(id);
         if (selectedSceneId === id) setSelectedSceneId(null);
       }}
       onReorder={reorderScenes}
@@ -506,7 +506,9 @@ export default function ProjectPage() {
         title={project?.title || "Untitled"}
         genre={genre ?? null}
         tags={tags as string[]}
-        onSave={updateProject}
+        onSave={async (updates) => {
+          await updateProject(updates);
+        }}
       />
       <ShareDialog
         open={shareOpen}

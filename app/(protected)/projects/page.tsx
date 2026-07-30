@@ -268,7 +268,10 @@ export default function ProjectsPage() {
             />
           </div>
 
-          <Select value={genreFilter} onValueChange={setGenreFilter}>
+          <Select
+            value={genreFilter}
+            onValueChange={(v) => setGenreFilter(v ?? "all")}
+          >
             <SelectTrigger className="w-[150px] h-10">
               <SelectValue placeholder="Genre" />
             </SelectTrigger>
