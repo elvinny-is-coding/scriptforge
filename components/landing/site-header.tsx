@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, Contrast } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 
 export function SiteHeader({ action }: { action: ReactNode }) {
   const { theme, cycleTheme } = useTheme();
@@ -27,11 +27,13 @@ export function SiteHeader({ action }: { action: ReactNode }) {
             variant="ghost"
             size="icon"
             onClick={cycleTheme}
-            title={`Theme: ${theme}`}
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
           >
-            {theme === "dark" && <Moon className="h-4 w-4" />}
-            {theme === "light" && <Sun className="h-4 w-4" />}
-            {theme === "high-contrast" && <Contrast className="h-4 w-4" />}
+            {theme === "dark" ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
           </Button>
           {action}
         </div>

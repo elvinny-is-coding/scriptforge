@@ -93,13 +93,29 @@ function LoadContentPlugin({ content }: { content: object }) {
   useEffect(() => {
     if (content !== prevContentRef.current) {
       prevContentRef.current = content;
+
+      // Don't load content if it's empty / not a valid Lexical state
+      const isValid =
+        content &&
+        typeof content === "object" &&
+        "root" in content &&
+        (content as any).root?.children?.length > 0;
+
+      if (!isValid) return; // <-- prevents the empty‑state error
+
       if (
         !editor.isEditable() ||
         editor.getRootElement() !== document.activeElement
       ) {
         editor.update(() => {
-          const editorState = editor.parseEditorState(JSON.stringify(content));
-          editor.setEditorState(editorState);
+          try {
+            const editorState = editor.parseEditorState(
+              JSON.stringify(content),
+            );
+            editor.setEditorState(editorState);
+          } catch {
+            // silently ignore invalid JSON
+          }
         });
       }
     }
