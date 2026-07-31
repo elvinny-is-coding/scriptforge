@@ -1,7 +1,10 @@
-# ScriptForge — AI-Powered Screenwriting Studio
+# ScriptForge — AI‑Powered Screenwriting Studio
 
 **Built for the IBM AI Builders Challenge (July 2026)**  
-**Live demo:** https://scriptforge-lyart.vercel.app/
+**Live demo:** [https://scriptforge-lyart.vercel.app/](https://scriptforge-lyart.vercel.app/)
+
+**Team Members:**  
+Elvin Ng Eng Kit, Lee Kue Jet, Soo Jian Yuan, Jischnu Jeremy
 
 ---
 
@@ -9,22 +12,29 @@
 
 ScriptForge is an intelligent screenwriting workspace that combines a dedicated screenplay editor with a suite of AI agents for brainstorming, rewriting, analysis, and visual ideation. It was built to help writers move from blank page to polished draft faster, without ever leaving the editor.
 
-The app understands screenplay structure natively—scene headings, action, character, dialogue, parentheticals, and transitions—and provides keyboard-driven formatting, live autocomplete, and a distraction-free focus mode.
+The app understands screenplay structure natively — scene headings, action, character, dialogue, parentheticals, transitions, and outlines — and provides keyboard‑driven formatting, live autocomplete, character colours, scene numbers, and a distraction‑free focus mode.
 
 ---
 
 ## Key Features
 
-- **Screenplay Editor** with custom Lexical nodes for every screenplay element, Tab/Enter auto-formatting, and toolbar formatting controls.
-- **AI Brainstorm** – A scene-specific chat interface with one-click insertion of suggestions directly into the screenplay.
-- **AI Improve** – AI agents for grammar, style, tone, consistency, fallacy detection, and pacing, with instant application of suggestions.
-- **Narrative Doctor** – Full-script analysis that identifies plot holes, character arc gaps, timeline inconsistencies, and logic flaws.
-- **Character Colors** – Assign colors to characters; matching borders appear throughout the script wherever they speak.
-- **Mood Board** – Generate concept art from scene descriptions using Cloudflare Workers AI and view images in full resolution.
-- **Snapshots** – Manual and automatic checkpoints (before every AI insertion) that restore the editor, Brainstorm chat, and Improve state together.
-- **Export** – Export to Fountain, plain text, or professionally formatted PDF with title page and page numbers.
-- **Dashboard** – Search, sort, rename, delete projects, reorder scenes with drag-and-drop, and filter by character.
-- **Keyboard Shortcuts** – Comprehensive shortcut support with a built-in help dialog.
+- **Screenplay Editor** – Custom Lexical nodes for every element, Tab/Enter auto‑formatting, tool‑bar formatting, scene numbers, and a word/page counter.
+- **AI Brainstorm** – Per‑scene chat with a writing partner; suggestions can be inserted directly into the script. The chat is persisted across sessions.
+- **AI Improve** – Agents for grammar/style, tone, consistency, logic fallacies, and pacing. Review changes and apply them instantly.
+- **Narrative Doctor** – Full‑script analysis that reports plot holes, timeline issues, character arc gaps, and logic flaws.
+- **AI Scene Summaries** – One‑sentence summaries appear in the scene list, generated lazily and cached.
+- **Inline Rewrite** – Right‑click any dialogue or action line to get 2‑3 AI‑rewritten alternatives and pick one.
+- **Character Colors** – Assign a colour to each character; dynamic borders appear throughout the script wherever they speak.
+- **Dialogue Tuner** – View all dialogue for a single character grouped by scene, with word counts.
+- **Mood Board** – Right‑click any scene description to generate concept art (Cloudflare Workers AI), viewable full‑size.
+- **Snapshots** – Manual and automatic checkpoints (before AI insert) that restore editor content, brainstorm chat, and improve outputs together.
+- **Export** – Fountain, plain text, formatted PDF with title page and page numbers, and Final Draft XML (.fdx).
+- **Public Sharing** – Generate a read‑only link to share your script; no login required for viewers.
+- **Dashboard** – Search, sort, rename, soft‑delete projects; reorder scenes with drag‑and‑drop; filter by character; filter by genre and tags.
+- **Profile** – Set a display name and bio, shown on shared scripts.
+- **Find & Replace** – Search and replace across the current scene (Ctrl+H).
+- **Keyboard Shortcuts** – Comprehensive shortcuts for all formatting and tools, with a built‑in help dialog and cheat sheet.
+- **Theme Toggle** – Dark, light, and high‑contrast themes with persistent preference.
 
 ---
 
@@ -36,9 +46,9 @@ IBM Bob served as the primary development tool throughout the entire project.
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Project Scaffolding**      | Generated the Next.js App Router structure, API route handlers, and the initial Lexical editor setup.                                           |
 | **Lexical Node Boilerplate** | Created custom screenplay node classes (Scene Heading, Action, Character, Dialogue, etc.) with proper TypeScript typing and JSON serialization. |
-| **Supabase RLS Policies**    | Wrote and debugged Row-Level Security policies for projects, scenes, snapshots, and mood board images.                                          |
+| **Supabase RLS Policies**    | Wrote and debugged Row‑Level Security policies for projects, scenes, snapshots, and mood board images.                                          |
 | **Prompt Engineering**       | Iteratively refined system prompts for the Brainstorm, Improve, Narrative Doctor, and image generation agents.                                  |
-| **TypeScript Types**         | Generated and refined database types for end-to-end type safety across hooks and API routes.                                                    |
+| **TypeScript Types**         | Generated and refined database types for end‑to‑end type safety across hooks and API routes.                                                    |
 | **Debugging**                | Helped diagnose and resolve complex issues involving Lexical `EditorState`, Supabase inserts, and React hydration.                              |
 
 Bob was used daily for chat, code generation, debugging, and architectural guidance, significantly accelerating development.
@@ -51,8 +61,10 @@ Bob was used daily for chat, code generation, debugging, and architectural guida
 - **Editor:** Meta Lexical with custom screenplay nodes
 - **Backend/API:** Next.js Route Handlers, Supabase
 - **AI:** Groq (Llama 3.3 70B), Cloudflare Workers AI (FLUX.1 Schnell)
-- **Authentication & Database:** Supabase Auth (Magic Link), PostgreSQL with Row-Level Security (RLS)
+- **Authentication & Database:** Supabase Auth (Magic Link), PostgreSQL with Row‑Level Security (RLS)
 - **Deployment:** Vercel
+
+---
 
 ---
 
@@ -101,11 +113,7 @@ http://localhost:3000
 
 ## Demo Video
 
-▶️ Watch the 3-minute demo
-
-> Replace this section with the final video link after uploading.
-
----
+## ▶️ Watch the 3-minute demo at https://drive.google.com/drive/folders/1kv7AjIm8c8sQKiq5UAw77oH4JkdYfnp9?usp=sharing
 
 ## License
 
