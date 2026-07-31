@@ -21,7 +21,8 @@ import { AutocompletePlugin } from "./plugins/AutocompletePlugin";
 import { FindReplacePlugin } from "./plugins/FindReplacePlugin";
 import { SceneNumberPlugin } from "./plugins/SceneNumberPlugin";
 import { SceneClickPlugin } from "./plugins/SceneClickPlugin";
-import { InlineRewritePlugin } from "./plugins/InlineRewritePlugin"; // new
+import { InlineRewritePlugin } from "./plugins/InlineRewritePlugin";
+import { ApplyImprovePlugin } from "./plugins/ApplyImprovePlugin"; // <-- new
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { Component, type ReactElement } from "react";
 import { $getSelection, $isRangeSelection, $getRoot } from "lexical";
@@ -211,7 +212,8 @@ export function ScreenplayEditor({
       <AutocompletePlugin />
       <FindReplacePlugin />
       <SceneClickPlugin />
-      <InlineRewritePlugin /> {/* right‑click rewrite */}
+      <InlineRewritePlugin />
+      <ApplyImprovePlugin /> {/* <-- Apply All for Improve tab */}
       {sceneNumber !== undefined && (
         <SceneNumberPlugin sceneNumber={sceneNumber} />
       )}

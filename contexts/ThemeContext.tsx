@@ -9,7 +9,7 @@ import {
   useCallback,
 } from "react";
 
-export type Theme = "light" | "dark" | "high-contrast";
+export type Theme = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
@@ -23,7 +23,7 @@ const ThemeContext = createContext<ThemeContextType>({
   cycleTheme: () => {},
 });
 
-const THEMES: Theme[] = ["dark", "light", "high-contrast"];
+const THEMES: Theme[] = ["dark", "light"];
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("dark");
@@ -43,7 +43,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Apply class to <html> and persist
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove("light", "dark", "high-contrast");
+    root.classList.remove("light", "dark");
     root.classList.add(theme);
     try {
       localStorage.setItem("scriptforge-theme", theme);
@@ -57,10 +57,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const cycleTheme = useCallback(() => {
-    setThemeState((prev) => {
-      const idx = THEMES.indexOf(prev);
-      return THEMES[(idx + 1) % THEMES.length];
-    });
+    setThemeState((prev) => (prev === "dark" ? "light" : "dark"));
   }, []);
 
   return (

@@ -22,7 +22,7 @@ export function useProfile(userId: string | undefined) {
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle(); // ← returns null when no row exists, no error
     setProfile(data ?? null);
     setLoading(false);
   }, [userId, supabase]);
@@ -43,10 +43,9 @@ export function useProfile(userId: string | undefined) {
           ...updates,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", userId)
         .select()
         .single();
-      if (!error) await fetchProfile(); // refresh after upsert
+      if (!error) await fetchProfile();
     },
     [userId, supabase, fetchProfile],
   );

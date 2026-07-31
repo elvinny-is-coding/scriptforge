@@ -1,7 +1,7 @@
 // components/projects/EditProjectDialog.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -68,6 +68,16 @@ export function EditProjectDialog({
   const [newTags, setNewTags] = useState<string[]>(tags);
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Sync state with the latest props every time the dialog opens
+  useEffect(() => {
+    if (open) {
+      setNewTitle(title);
+      setNewGenre(genre);
+      setNewTags(tags);
+      setTagInput("");
+    }
+  }, [open, title, genre, tags]);
 
   const handleAddTag = () => {
     const tag = tagInput.trim();

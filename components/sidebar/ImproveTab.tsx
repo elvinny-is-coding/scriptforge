@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { useGroq } from "@/hooks/useGroq";
 import { SuggestionCard } from "./SuggestionCard";
+import { toast } from "sonner";
 import {
   SpellCheck,
   Palette,
@@ -53,6 +54,29 @@ export function ImproveTab({
     agent: (activeAgent as any) ?? "grammar",
   });
 
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { applied, skipped } = (
+        e as CustomEvent<{ applied: number; skipped: number }>
+      ).detail;
+      if (applied > 0 && skipped === 0) {
+        toast.success(
+          `Applied ${applied} correction${applied !== 1 ? "s" : ""}`,
+        );
+      } else if (applied > 0 && skipped > 0) {
+        toast.warning(
+          `Applied ${applied} correction${applied !== 1 ? "s" : ""}, skipped ${skipped} (text already edited)`,
+        );
+      } else if (skipped > 0) {
+        toast.info(
+          "No corrections applied — text may have been edited since analysis",
+        );
+      }
+    };
+    window.addEventListener("apply-improve-results", handler);
+    return () => window.removeEventListener("apply-improve-results", handler);
+  }, []);
+
   // Persist output to lifted state when streaming finishes
   useEffect(() => {
     if (!isLoading && output && selectedSceneId && activeAgent) {
@@ -84,7 +108,6 @@ export function ImproveTab({
   const handleAgent = (agent: (typeof agents)[number]["key"]) => {
     setActiveAgent(agent);
     const userMessage = `Analyze the following:\n\n${selectedText || currentSceneContent}`;
-    // Clear output for this scene before starting new analysis
     if (selectedSceneId) {
       setImproveOutputsByScene((prev) => ({
         ...prev,
@@ -111,7 +134,6 @@ export function ImproveTab({
 
   const handleReset = () => {
     if (!selectedSceneId) return;
-    // Remove scene entry from the map
     setImproveOutputsByScene((prev) => {
       const updated = { ...prev };
       delete updated[selectedSceneId];
@@ -135,6 +157,25 @@ export function ImproveTab({
 
   const suggestions = parseSuggestions(displayOutput);
 
+  // Check if we can show "Apply All" – only for grammar corrections with array results
+  const canApplyAll =
+    displayAgent === "grammar" &&
+    !isLoading &&
+    suggestions &&
+    Array.isArray(suggestions) &&
+    suggestions.length > 0;
+
+  const handleApplyAll = () => {
+    if (!canApplyAll || !suggestions) return;
+    const corrections = suggestions.map((item: any) => ({
+      original: item.original || "",
+      corrected: item.corrected || item.suggestion || item.fix || "",
+    }));
+    window.dispatchEvent(
+      new CustomEvent("apply-improve-corrections", { detail: corrections }),
+    );
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Fixed top: agent buttons */}
@@ -143,16 +184,28 @@ export function ImproveTab({
           <span className="text-xs font-semibold text-muted-foreground">
             Improve Agents
           </span>
-          {selectedSceneId && improveOutputsByScene[selectedSceneId] && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleReset}
-              className="h-6 text-xs px-2"
-            >
-              Reset
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {canApplyAll && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-xs px-2"
+                onClick={handleApplyAll}
+              >
+                Apply All
+              </Button>
+            )}
+            {selectedSceneId && improveOutputsByScene[selectedSceneId] && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleReset}
+                className="h-6 text-xs px-2"
+              >
+                Reset
+              </Button>
+            )}
+          </div>
         </div>
         <div className="grid grid-cols-1 gap-1">
           {agents.map(({ key, label, icon: Icon }) => (
@@ -172,7 +225,7 @@ export function ImproveTab({
       </div>
 
       {/* Scrollable output area */}
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1 p-4 overflow-auto">
         {isLoading && (
           <div className="flex flex-col items-center gap-2 py-8">
             <LoadingSpinner />

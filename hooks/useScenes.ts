@@ -49,43 +49,56 @@ export function useScenes(projectId: string | undefined) {
   const createScene = async (heading?: string, orderIndex?: number) => {
     if (!projectId) return null;
 
-    const { data: maxData } = await supabase
-      .from("scenes")
-      .select("order_index")
-      .eq("project_id", projectId)
-      .is("deleted_at", null)
-      .order("order_index", { ascending: false })
-      .limit(1)
-      .single();
+    let attempts = 0;
+    const MAX_ATTEMPTS = 3;
 
-    const nextIndex = (maxData?.order_index ?? -1) + 1;
+    while (attempts < MAX_ATTEMPTS) {
+      // Always get the latest max index before each attempt
+      const { data: maxData } = await supabase
+        .from("scenes")
+        .select("order_index")
+        .eq("project_id", projectId)
+        .is("deleted_at", null)
+        .order("order_index", { ascending: false })
+        .limit(1)
+        .single();
 
-    const insertData: TablesInsert<"scenes"> = {
-      project_id: projectId,
-      order_index: nextIndex,
-      heading: heading ?? "INT. UNTITLED - DAY",
-      content: EMPTY_LEXICAL_STATE,
-    };
+      const nextIndex =
+        attempts === 0 && orderIndex !== undefined
+          ? orderIndex
+          : (maxData?.order_index ?? -1) + 1 + attempts;
 
-    const { data, error } = await supabase
-      .from("scenes")
-      .insert(insertData)
-      .select()
-      .single();
+      const insertData: TablesInsert<"scenes"> = {
+        project_id: projectId,
+        order_index: nextIndex,
+        heading: heading ?? "INT. UNTITLED - DAY",
+        content: EMPTY_LEXICAL_STATE,
+      };
 
-    if (error) {
-      console.error("Supabase insert error:", error.message, error.details);
+      const { data, error } = await supabase
+        .from("scenes")
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (!error && data) {
+        const newScene = data as Scene;
+        setScenes((prev) => [...prev, newScene]);
+        return newScene;
+      }
+
+      // If duplicate key, try again; otherwise abort
+      if (error && error.code === "23505") {
+        attempts++;
+        continue;
+      }
+
+      console.error("Supabase insert error:", error?.message, error?.details);
       return null;
     }
 
-    if (!data) {
-      console.error("No data returned from scene insert");
-      return null;
-    }
-
-    const newScene = data as Scene;
-    setScenes((prev) => [...prev, newScene]);
-    return newScene;
+    console.error("Failed to create scene after retries");
+    return null;
   };
 
   const updateScene = async (

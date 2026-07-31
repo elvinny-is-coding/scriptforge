@@ -19,64 +19,59 @@ interface HelpDialogProps {
 
 const slides = [
   {
-    title: "Welcome to ScriptForge",
+    title: "Welcome to ScriptForge!",
     description:
-      "ScriptForge is your AI‑powered screenwriting partner. This guide will walk you through its main features.",
+      "Let's take a quick tour of the tools that will help you write, polish, and share your screenplay. Use the arrows to move through each topic.",
   },
   {
-    title: "The Editor",
+    title: "Writing and formatting",
     description:
-      "Write using standard screenplay elements. Press Enter to continue the current element type. Use the toolbar buttons or keyboard shortcuts to change element types.",
+      "Type your script as you normally would. Press Enter to continue the current element, or use the toolbar buttons to switch between Character, Dialogue, Action, and more. Need to change a line’s type? Just click the 👤 or 💬 button.",
   },
   {
-    title: "Character & Dialogue",
+    title: "Keyboard shortcuts you’ll love",
     description:
-      "Select a word (like a name) and click the User icon in the toolbar to turn it into a Character element. Select a sentence and click the Message icon to turn it into Dialogue. The buttons light up when you're on a Character or Dialogue line.\n\nKeyboard: Ctrl+3 for Character, Ctrl+4 for Dialogue.",
-  },
-  {
-    title: "Character Colors & Dialogue",
-    description:
-      "Each character can have a custom color. Open the Characters & Dialogue modal from the palette icon next to the character filter. Assign a colour, then the character names and their dialogue will show a coloured left border in the editor. The modal also shows all dialogue lines for a character, with word counts.",
-  },
-  {
-    title: "All Shortcuts",
-    description:
-      "Ctrl+1 Scene Heading\nCtrl+2 Action\nCtrl+3 Character\nCtrl+4 Dialogue\nCtrl+5 Parenthetical\nCtrl+6 Transition\nCtrl+7 Outline\nCtrl+Shift+Right / Left cycle element types\nCtrl+Space open autocomplete\nEnter / Tab apply suggestion\nEsc dismiss suggestions",
-  },
-  {
-    title: "Autocomplete",
-    description:
-      "As you type a character name or scene heading, suggestions appear automatically. Press Ctrl+Space to force them. Use Arrow keys to navigate and Enter to accept. The list includes both saved and unsaved names.",
-  },
-  {
-    title: "Scene Management",
-    description:
-      "The left panel lists all scenes. Double‑click a scene heading to rename it. Drag scenes to reorder them. Use 'New Scene' to add one. The character filter lets you see only scenes containing a specific character.",
+      "Ctrl+1 → Scene Heading\nCtrl+2 → Action\nCtrl+3 → Character\nCtrl+4 → Dialogue\nCtrl+5 → Parenthetical\nCtrl+6 → Transition\nCtrl+7 → Outline\nCtrl+Shift+←/→ to cycle element types\nCtrl+Space to open autocomplete\nCtrl+H to find & replace\nCtrl+S to save",
   },
   {
     title: "AI Brainstorm",
     description:
-      "In the right sidebar, the Brainstorm tab lets you chat with an AI writing partner. Ask it to suggest next beats, dialogue, or story ideas. Responses include an 'Insert' button to add the suggestion directly into the editor. The chat is saved per scene.",
+      "Stuck on a scene? Open the Brainstorm tab and ask the AI for the next beat, dialogue ideas, or story twists. Every response includes an Insert button so you can drop the suggestion right into your script.",
   },
   {
-    title: "AI Improve",
+    title: "AI Improve & Doctor",
     description:
-      "The Improve tab provides agents for grammar/style, tone shifting, consistency checks, logic fallacies, and pacing. Click an agent to analyze the current scene, then apply suggested changes.",
+      "Use the Improve agents to fix grammar, adjust tone, check pacing, and more. When your draft is done, run the Narrative Doctor — it scans the whole script for plot holes, timeline issues, and character arc gaps.",
   },
   {
-    title: "Narrative Doctor",
+    title: "Characters & Colours",
     description:
-      "The Doctor tab analyzes your entire script for structural issues like timeline contradictions, missing setups, and character arc gaps. Run it when you have a draft ready.",
+      "Give each character a colour and watch their dialogue light up with a matching border. Open the Characters & Dialogue modal from the palette icon to assign colours, see all of a character’s lines, and track word counts.",
   },
   {
     title: "Mood Board",
     description:
-      "Right‑click any scene description text and choose 'Generate Concept Art' to create an image. Images are stored in the Mood Board tab where you can view them full‑size.",
+      "Right‑click any scene description in the editor and choose “Generate Concept Art”. The image appears in your Mood Board — click it to view full‑size.",
   },
   {
-    title: "Focus Mode & Export",
+    title: "Snapshots",
     description:
-      "Click the Maximize icon to enter Focus Mode — all panels disappear, leaving only the editor. Use the Export button to download your script in Fountain format (or plain text). A Help button (?) is also available in the top bar.",
+      "Worried about losing a good version? Take a snapshot to save everything — editor content, brainstorm chat, and improve outputs. You can restore or delete snapshots anytime from the Snapshots tab.",
+  },
+  {
+    title: "Export & Share",
+    description:
+      "Export your script as Fountain, plain text, PDF, or Final Draft (.fdx). Need feedback? Generate a share link — anyone with the link can view your script in a clean, read‑only page.",
+  },
+  {
+    title: "Focus Mode",
+    description:
+      "Click the Maximise icon to hide all panels and toolbars. Only your script remains. Press Escape or click the Exit button to return.",
+  },
+  {
+    title: "You’re all set!",
+    description:
+      "That’s the essentials. If you ever need a refresher, click the ❓ icon. Happy writing!",
   },
 ];
 
@@ -94,7 +89,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{slide.title}</DialogTitle>
           <DialogDescription className="whitespace-pre-wrap">

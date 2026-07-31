@@ -20,7 +20,7 @@ interface ExportDialogProps {
   projectId: string;
 }
 
-type ExportFormat = "fountain" | "plaintext" | "pdf";
+type ExportFormat = "fountain" | "plaintext" | "pdf" | "fdx";
 
 export function ExportDialog({
   open,
@@ -51,7 +51,9 @@ export function ExportDialog({
           ? "fountain"
           : format === "plaintext"
             ? "txt"
-            : "pdf";
+            : format === "fdx"
+              ? "fdx"
+              : "pdf";
       a.download = `${projectTitle || "script"}.${extension}`;
       a.click();
       URL.revokeObjectURL(url);
@@ -98,6 +100,13 @@ export function ExportDialog({
               <Label htmlFor="fmt-pdf" className="cursor-pointer">
                 <span className="font-medium">PDF</span> – Formatted screenplay
                 with title page and page numbers.
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3">
+              <RadioGroupItem value="fdx" id="fmt-fdx" />
+              <Label htmlFor="fmt-fdx" className="cursor-pointer">
+                <span className="font-medium">Final Draft (.fdx)</span> – XML
+                format for Final Draft, ready for agents and studios.
               </Label>
             </div>
           </RadioGroup>

@@ -72,7 +72,7 @@ export function MoodBoardPanel({ projectId }: MoodBoardPanelProps) {
                 }
                 fill
                 unoptimized
-                className="object-fill" /* Stretches image to fully fill the container */
+                className="object-contain" /* Stretches image to fully fill the container */
               />
             </div>
           )}
