@@ -39,6 +39,18 @@ import {
 import type { Json } from "@/types/supabase";
 import { toast } from "sonner";
 
+function parseTags(tags: unknown): string[] {
+  if (Array.isArray(tags)) return tags;
+  if (typeof tags === "string") {
+    try {
+      return JSON.parse(tags);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export default function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const router = useRouter();
@@ -505,7 +517,7 @@ export default function ProjectPage() {
         onOpenChange={setEditProjectOpen}
         title={project?.title || "Untitled"}
         genre={genre ?? null}
-        tags={tags as string[]}
+        tags={parseTags(project?.tags)}
         onSave={async (updates) => {
           await updateProject(updates);
         }}

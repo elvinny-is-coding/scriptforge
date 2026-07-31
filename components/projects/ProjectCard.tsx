@@ -26,6 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { EditTagsDialog } from "./EditTagsDialog";
 import { formatDistanceToNow } from "@/lib/utils/format";
 import {
   FileText,
@@ -33,6 +34,7 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
+  Tag,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -46,6 +48,7 @@ interface ProjectCardProps {
   tags?: string[];
   onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
+  onUpdateTags: (id: string, tags: string[]) => void;
 }
 
 export function ProjectCard({
@@ -58,10 +61,12 @@ export function ProjectCard({
   tags = [],
   onRename,
   onDelete,
+  onUpdateTags,
 }: ProjectCardProps) {
   const router = useRouter();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
+  const [editTagsOpen, setEditTagsOpen] = useState(false);
   const [newTitle, setNewTitle] = useState(title);
 
   const handleNavigate = () => {
@@ -73,6 +78,10 @@ export function ProjectCard({
       onRename(id, newTitle.trim());
     }
     setRenameOpen(false);
+  };
+
+  const handleSaveTags = async (newTags: string[]) => {
+    onUpdateTags(id, newTags);
   };
 
   return (
@@ -109,6 +118,15 @@ export function ProjectCard({
                   >
                     <Pencil className="mr-2 h-4 w-4" />
                     Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditTagsOpen(true);
+                    }}
+                  >
+                    <Tag className="mr-2 h-4 w-4" />
+                    Edit Tags
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive"
@@ -153,7 +171,7 @@ export function ProjectCard({
         </CardHeader>
       </Card>
 
-      {/* Rename dialog – inline simple prompt */}
+      {/* Rename dialog */}
       <AlertDialog open={renameOpen} onOpenChange={setRenameOpen}>
         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
@@ -214,6 +232,14 @@ export function ProjectCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Tags dialog */}
+      <EditTagsDialog
+        open={editTagsOpen}
+        onOpenChange={setEditTagsOpen}
+        tags={tags}
+        onSave={handleSaveTags}
+      />
     </>
   );
 }

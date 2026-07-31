@@ -1,3 +1,4 @@
+// app/(protected)/projects/page.tsx
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -50,6 +51,18 @@ function countWordsInLexicalJSON(content: Json): number {
   return total;
 }
 
+function parseTags(tags: unknown): string[] {
+  if (Array.isArray(tags)) return tags;
+  if (typeof tags === "string") {
+    try {
+      return JSON.parse(tags);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 type SortOption =
   | "updated"
   | "title-asc"
@@ -91,7 +104,7 @@ export default function ProjectsPage() {
       const { data: projectList } = await supabase
         .from("projects")
         .select("*")
-        .is("deleted_at", null) // ← only active projects
+        .is("deleted_at", null)
         .order("updated_at", { ascending: false });
 
       if (!projectList) {
@@ -105,7 +118,7 @@ export default function ProjectsPage() {
         .from("scenes")
         .select("project_id, content")
         .in("project_id", projectIds)
-        .is("deleted_at", null); // ← only active scenes
+        .is("deleted_at", null);
 
       const sceneCountMap: Record<string, number> = {};
       const wordCountMap: Record<string, number> = {};
@@ -177,6 +190,26 @@ export default function ProjectsPage() {
     toast.success("Project renamed");
   };
 
+  const handleUpdateTags = async (id: string, newTags: string[]) => {
+    // Optimistic update
+    setProjects((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, tags: newTags } : p)),
+    );
+
+    const { error } = await supabase
+      .from("projects")
+      .update({ tags: newTags as unknown as Json })
+      .eq("id", id);
+
+    if (error) {
+      toast.error("Failed to update tags");
+      // Revert optimistic update if needed – for simplicity, we'll just refetch
+      // but we can also just leave it; the user can try again
+    } else {
+      toast.success("Tags updated");
+    }
+  };
+
   // Soft‑delete a project
   const handleDelete = async (id: string) => {
     const { error } = await supabase
@@ -197,13 +230,11 @@ export default function ProjectsPage() {
   const processedProjects = useMemo(() => {
     let filtered = projects;
 
-    // search by title
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter((p) => p.title.toLowerCase().includes(query));
     }
 
-    // filter by genre
     if (genreFilter !== "all") {
       filtered = filtered.filter((p) => p.genre === genreFilter);
     }
@@ -328,9 +359,10 @@ export default function ProjectsPage() {
               sceneCount={p.sceneCount}
               wordCount={p.wordCount}
               genre={p.genre}
-              tags={p.tags as string[]}
+              tags={parseTags(p.tags)}
               onRename={handleRename}
               onDelete={handleDelete}
+              onUpdateTags={handleUpdateTags}
             />
           ))}
         </div>
