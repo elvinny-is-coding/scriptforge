@@ -79,7 +79,6 @@ export function ScreenplayToolbar() {
     const onEnd = () => {
       setSaveState("saved");
       const timer = setTimeout(() => setSaveState("idle"), 2000);
-      // cleanup if component unmounts before timeout
       return () => clearTimeout(timer);
     };
 
@@ -110,6 +109,14 @@ export function ScreenplayToolbar() {
     return node;
   }
 
+  // Check if parentBlock is the only child of the root
+  function isRootsOnlyChild(block: any): boolean {
+    if ($isRootOrShadowRoot(block)) return false;
+    const root = $getRoot();
+    const children = root.getChildren();
+    return children.length === 1 && children[0] === block;
+  }
+
   /** Replace the entire current block with a Character node */
   const convertToCharacter = () => {
     editor.update(() => {
@@ -123,6 +130,15 @@ export function ScreenplayToolbar() {
         ? parentBlock.getTextContent().trim()
         : selection.getTextContent().trim();
       if (!text) return;
+
+      // If parentBlock is the root's only child, we cannot replace it.
+      // Instead, we clear the block and insert the new text, keeping the node type.
+      if (isRootsOnlyChild(parentBlock)) {
+        parentBlock.clear();
+        parentBlock.append($createTextNode(text.toUpperCase()));
+        parentBlock.selectEnd();
+        return;
+      }
 
       const newChar = $createCharacterNode();
       newChar.append($createTextNode(text.toUpperCase()));
@@ -149,6 +165,15 @@ export function ScreenplayToolbar() {
         ? parentBlock.getTextContent().trim()
         : selection.getTextContent().trim();
       if (!text) return;
+
+      // If parentBlock is the root's only child, we cannot replace it.
+      // Instead, we clear the block and insert the new text, keeping the node type.
+      if (isRootsOnlyChild(parentBlock)) {
+        parentBlock.clear();
+        parentBlock.append($createTextNode(text));
+        parentBlock.selectEnd();
+        return;
+      }
 
       const newDial = $createDialogueNode();
       newDial.append($createTextNode(text));

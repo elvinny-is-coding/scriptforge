@@ -39,6 +39,14 @@ export function AutoFormatPlugin() {
           event?.preventDefault();
           return true;
         }
+        // ---- new: Action node handler ----
+        if ($isActionNode(parent)) {
+          parent.insertAfter($createActionNode());
+          parent.selectNext();
+          event?.preventDefault();
+          return true;
+        }
+        // ---------------------------------
         if ($isCharacterNode(parent)) {
           const charName = parent.getTextContent().trim().toUpperCase();
           const dialogueNode = $createDialogueNode();

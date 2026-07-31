@@ -132,19 +132,11 @@ function InsertSuggestionPlugin() {
       const text = e.detail;
       editor.update(() => {
         const selection = $getSelection();
+        // Only insert if there is a valid range selection (collapsed or not)
         if ($isRangeSelection(selection)) {
           selection.insertText(text);
-        } else {
-          const root = $getRoot();
-          const lastChild = root.getLastChild();
-          if (lastChild) {
-            lastChild.selectEnd();
-            const newSelection = $getSelection();
-            if ($isRangeSelection(newSelection)) {
-              newSelection.insertText(text);
-            }
-          }
         }
+        // If there's no selection, do nothing — the user must place the cursor first
       });
     };
 

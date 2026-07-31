@@ -4,6 +4,7 @@ import {
   LexicalNode,
   SerializedElementNode,
   Spread,
+  RangeSelection,
 } from "lexical";
 
 export type SerializedActionNode = Spread<
@@ -44,6 +45,15 @@ export class ActionNode extends ElementNode {
 
   canInsertTextAfter(): boolean {
     return true;
+  }
+
+  insertNewAfter(
+    selection: RangeSelection,
+    restoreSelection = true,
+  ): ElementNode {
+    const newElement = $createActionNode();
+    this.insertAfter(newElement, restoreSelection);
+    return newElement;
   }
 }
 

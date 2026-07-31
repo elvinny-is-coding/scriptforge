@@ -4,7 +4,8 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import {
   $getSelection,
   $isRangeSelection,
-  $setSelection,
+  $getRoot,
+  $isRootOrShadowRoot,
   COMMAND_PRIORITY_EDITOR,
   KEY_DOWN_COMMAND,
 } from "lexical";
@@ -20,6 +21,18 @@ import { $createDialogueNode } from "../nodes/DialogueNode";
 import { $createParentheticalNode } from "../nodes/ParentheticalNode";
 import { $createTransitionNode } from "../nodes/TransitionNode";
 import { $createSceneHeadingNode } from "../nodes/SceneHeadingNode";
+
+function safeReplace(parent: any, newNode: any) {
+  const root = $getRoot();
+  const children = root.getChildren();
+  if (children.length === 1 && children[0] === parent) {
+    // Cannot replace the root's only child – clear and reuse
+    parent.clear();
+    parent.append(...newNode.getChildren());
+    return;
+  }
+  parent.replace(newNode);
+}
 
 export function ScreenplayShortcutsPlugin() {
   const [editor] = useLexicalComposerContext();
@@ -69,12 +82,12 @@ export function ScreenplayShortcutsPlugin() {
               return false;
           }
 
-          parent.replace(newNode);
+          safeReplace(parent, newNode);
           newNode.selectEnd();
           return true;
         }
 
-        // Tab key to cycle: Action -> Character -> Dialogue -> parenthetical -> Transition -> SceneHeading -> Action
+        // Tab key to cycle (this handler was removed earlier, but keep the guard if it ever comes back)
         if (event.key === "Tab") {
           event.preventDefault();
           const selection = $getSelection();
@@ -103,7 +116,7 @@ export function ScreenplayShortcutsPlugin() {
           if (idx !== -1) {
             const nextIdx = (idx + 1) % creators.length;
             const newNode = creators[nextIdx]();
-            parent.replace(newNode);
+            safeReplace(parent, newNode);
             newNode.selectEnd();
             return true;
           }
